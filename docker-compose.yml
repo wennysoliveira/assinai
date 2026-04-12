@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+
+      # Banco de dados PostgreSQL
+      DATABASE_URL: postgres://usuario:senha@db:5432/assinai
+
+      # Segredo para sessões (troque por uma string longa e aleatória)
+      SESSION_SECRET: troque-por-um-segredo-longo-aqui
+
+      # Credenciais de acesso ao painel
+      ADMIN_EMAIL: admin@seudominio.com
+      ADMIN_PASSWORD: suasenhaforte
+
+      # QQPag (PIX)
+      QQPAG_BASE_URL: https://api.qqpag.com
+      QQPAG_TOKEN: seu-token-qqpag
+
+      # Uazapi (WhatsApp)
+      UAZAPI_BASE_URL: https://api.uazapi.com
+      UAZAPI_TOKEN: seu-token-uazapi
+
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: senha
+      POSTGRES_DB: assinai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U usuario -d assinai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
