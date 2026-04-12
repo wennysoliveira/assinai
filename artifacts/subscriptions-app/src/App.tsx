@@ -9,6 +9,9 @@ import Customers from "@/pages/customers";
 import Subscriptions from "@/pages/subscriptions";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
+import { applyStoredThemeColors } from "@/hooks/use-theme-color";
+
+applyStoredThemeColors();
 
 const queryClient = new QueryClient({
   defaultOptions: {
