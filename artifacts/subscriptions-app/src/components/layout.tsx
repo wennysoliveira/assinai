@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useUser, useClerk } from "@clerk/react";
+import { useAuth } from "@/hooks/use-auth";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -31,11 +31,10 @@ const navigation = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user, logout } = useAuth();
 
-  const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || "Usuário";
-  const displayEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const displayEmail = user?.email ?? "";
+  const displayName = displayEmail.split("@")[0] || "Usuário";
   const initials = displayName.slice(0, 2).toUpperCase();
 
   // Close mobile menu on route change
@@ -90,7 +89,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-            onClick={() => signOut({ redirectUrl: "/" })}
+            onClick={() => void logout()}
             title="Sair"
           >
             <LogOut className="h-4 w-4" />
