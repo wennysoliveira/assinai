@@ -48,8 +48,17 @@ SaaS for managing recurring subscriptions with PIX payment integration (QQPag) a
 - **qqpag.ts** — QQPag API integration for PIX charge generation (POST /pix/cobranca)
 - **uazapi.ts** — Uazapi API integration for WhatsApp messages (payment reminders, payment confirmations)
 
+### Auth (Clerk)
+- `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` — auto-provisioned by Replit
+- `ClerkProvider` wraps the entire app in `App.tsx`
+- Routes `/sign-in` and `/sign-up` render Clerk's built-in UI components
+- `ProtectedRoute` wrapper: shows content when signed-in, redirects to `/` when signed-out
+- `HomeRedirect` at `/`: shows `Home` landing page when signed-out, redirects to `/dashboard` when signed-in
+- Sidebar shows real user name/email from `useUser()` and a sign-out button via `useClerk().signOut`
+
 ### Frontend Pages (artifacts/subscriptions-app/src/pages/)
-- **Dashboard** (/) — MRR, Active Subscriptions, Churn Rate, Today's Revenue, Pending/Overdue Invoices, Revenue Chart, Recent Payments
+- **Home** (/) — Public landing page for unauthenticated users; shows features and CTA buttons
+- **Dashboard** (/dashboard) — MRR, Active Subscriptions, Churn Rate, Today's Revenue, Pending/Overdue Invoices, Revenue Chart, Recent Payments
 - **Customers** (/customers) — CRUD with search and status filter
 - **Services** (/services) — CRUD for services (name, description, active toggle); shown in subscription form
 - **Subscriptions** (/subscriptions) — CRUD with customer + service selection, status filter; shows serviceName column
@@ -63,5 +72,7 @@ SaaS for managing recurring subscriptions with PIX payment integration (QQPag) a
 - `UAZAPI_BASE_URL` — Uazapi API base URL
 - `UAZAPI_TOKEN` — Uazapi authentication token
 - `SESSION_SECRET` — Session secret
+- `VITE_CLERK_PUBLISHABLE_KEY` — Clerk publishable key for the frontend
+- `CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — Clerk keys for the API server
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

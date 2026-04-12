@@ -10,15 +10,17 @@ import {
   Bell,
   Search,
   Layers,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useUser, useClerk } from "@clerk/react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Clientes", href: "/customers", icon: Users },
   { name: "Serviços", href: "/services", icon: Layers },
   { name: "Assinaturas", href: "/subscriptions", icon: CreditCard },
@@ -29,6 +31,12 @@ const navigation = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
+  const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || "Usuário";
+  const displayEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const initials = displayName.slice(0, 2).toUpperCase();
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -72,12 +80,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-2">
           <Avatar className="h-9 w-9 border border-border">
-            <AvatarFallback className="bg-primary/10 text-primary">AD</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary">{initials}</AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-sidebar-foreground">Administrador</span>
-            <span className="text-xs text-muted-foreground">admin@recorrente.co</span>
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-sm font-medium text-sidebar-foreground truncate">{displayName}</span>
+            <span className="text-xs text-muted-foreground truncate">{displayEmail}</span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+            onClick={() => signOut({ redirectUrl: "/" })}
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>
