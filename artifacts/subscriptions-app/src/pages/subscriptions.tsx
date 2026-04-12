@@ -222,8 +222,7 @@ export default function Subscriptions() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cliente</TableHead>
-                    <TableHead>Serviço</TableHead>
-                    <TableHead>Plano</TableHead>
+                    <TableHead>Serviço / Plano</TableHead>
                     <TableHead>Periodicidade</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Status</TableHead>
@@ -235,8 +234,14 @@ export default function Subscriptions() {
                   {subscriptions.map((sub) => (
                     <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
                       <TableCell className="font-medium">{sub.customerName || "-"}</TableCell>
-                      <TableCell className="text-muted-foreground">{sub.serviceName || <span className="text-xs italic">—</span>}</TableCell>
-                      <TableCell>{sub.plan}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-0.5">
+                          {sub.serviceName && (
+                            <span className="text-xs text-muted-foreground">{sub.serviceName}</span>
+                          )}
+                          <span className="font-medium text-sm">{sub.plan}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{sub.periodicity === "monthly" ? "Mensal" : "Anual"}</TableCell>
                       <TableCell>{formatCurrency(sub.amount)}</TableCell>
                       <TableCell>{statusBadge(sub.status)}</TableCell>
