@@ -8,3 +8,246 @@
 export interface HealthStatus {
   status: string;
 }
+
+export type CustomerStatus =
+  (typeof CustomerStatus)[keyof typeof CustomerStatus];
+
+export const CustomerStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface Customer {
+  id: number;
+  name: string;
+  whatsapp: string;
+  cpfCnpj: string;
+  status: CustomerStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateCustomerBodyStatus =
+  (typeof CreateCustomerBodyStatus)[keyof typeof CreateCustomerBodyStatus];
+
+export const CreateCustomerBodyStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CreateCustomerBody {
+  name: string;
+  whatsapp: string;
+  cpfCnpj: string;
+  status?: CreateCustomerBodyStatus;
+}
+
+export type UpdateCustomerBodyStatus =
+  (typeof UpdateCustomerBodyStatus)[keyof typeof UpdateCustomerBodyStatus];
+
+export const UpdateCustomerBodyStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface UpdateCustomerBody {
+  name?: string;
+  whatsapp?: string;
+  cpfCnpj?: string;
+  status?: UpdateCustomerBodyStatus;
+}
+
+export type SubscriptionPeriodicity =
+  (typeof SubscriptionPeriodicity)[keyof typeof SubscriptionPeriodicity];
+
+export const SubscriptionPeriodicity = {
+  monthly: "monthly",
+  annual: "annual",
+} as const;
+
+export type SubscriptionStatus =
+  (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
+
+export const SubscriptionStatus = {
+  active: "active",
+  cancelled: "cancelled",
+  overdue: "overdue",
+} as const;
+
+export interface Subscription {
+  id: number;
+  customerId: number;
+  customerName?: string;
+  plan: string;
+  periodicity: SubscriptionPeriodicity;
+  amount: number;
+  status: SubscriptionStatus;
+  nextBillingDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateSubscriptionBodyPeriodicity =
+  (typeof CreateSubscriptionBodyPeriodicity)[keyof typeof CreateSubscriptionBodyPeriodicity];
+
+export const CreateSubscriptionBodyPeriodicity = {
+  monthly: "monthly",
+  annual: "annual",
+} as const;
+
+export interface CreateSubscriptionBody {
+  customerId: number;
+  plan: string;
+  periodicity: CreateSubscriptionBodyPeriodicity;
+  amount: number;
+  nextBillingDate: string;
+}
+
+export type UpdateSubscriptionBodyPeriodicity =
+  (typeof UpdateSubscriptionBodyPeriodicity)[keyof typeof UpdateSubscriptionBodyPeriodicity];
+
+export const UpdateSubscriptionBodyPeriodicity = {
+  monthly: "monthly",
+  annual: "annual",
+} as const;
+
+export type UpdateSubscriptionBodyStatus =
+  (typeof UpdateSubscriptionBodyStatus)[keyof typeof UpdateSubscriptionBodyStatus];
+
+export const UpdateSubscriptionBodyStatus = {
+  active: "active",
+  cancelled: "cancelled",
+  overdue: "overdue",
+} as const;
+
+export interface UpdateSubscriptionBody {
+  plan?: string;
+  periodicity?: UpdateSubscriptionBodyPeriodicity;
+  amount?: number;
+  status?: UpdateSubscriptionBodyStatus;
+  nextBillingDate?: string;
+}
+
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
+
+export const InvoiceStatus = {
+  pending: "pending",
+  paid: "paid",
+  overdue: "overdue",
+  cancelled: "cancelled",
+} as const;
+
+export interface Invoice {
+  id: number;
+  subscriptionId: number;
+  customerId: number;
+  customerName?: string;
+  amount: number;
+  status: InvoiceStatus;
+  dueDate: string;
+  /** @nullable */
+  paidAt?: string | null;
+  /** @nullable */
+  pixCode?: string | null;
+  /** @nullable */
+  pixQrCode?: string | null;
+  /** @nullable */
+  externalId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PixCharge {
+  invoiceId: number;
+  qrCode: string;
+  pixCopiaECola: string;
+  externalId: string;
+}
+
+export interface MessageResult {
+  success: boolean;
+  message: string;
+}
+
+export interface DashboardSummary {
+  mrr: number;
+  activeSubscriptions: number;
+  churnRate: number;
+  todayRevenue: number;
+  pendingInvoices: number;
+  overdueInvoices: number;
+}
+
+export interface RecentPayment {
+  id: number;
+  customerName: string;
+  amount: number;
+  paidAt: string;
+}
+
+export interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+}
+
+export interface CronResult {
+  processed: number;
+  successful: number;
+  failed: number;
+  message: string;
+}
+
+export interface QQPagWebhookPayload {
+  transactionId: string;
+  externalId: string;
+  status: string;
+  amount?: number;
+  paidAt?: string;
+}
+
+export interface WebhookResult {
+  received: boolean;
+}
+
+export type ListCustomersParams = {
+  search?: string;
+  status?: ListCustomersStatus;
+};
+
+export type ListCustomersStatus =
+  (typeof ListCustomersStatus)[keyof typeof ListCustomersStatus];
+
+export const ListCustomersStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ListSubscriptionsParams = {
+  customerId?: number;
+  status?: ListSubscriptionsStatus;
+};
+
+export type ListSubscriptionsStatus =
+  (typeof ListSubscriptionsStatus)[keyof typeof ListSubscriptionsStatus];
+
+export const ListSubscriptionsStatus = {
+  active: "active",
+  cancelled: "cancelled",
+  overdue: "overdue",
+} as const;
+
+export type ListInvoicesParams = {
+  customerId?: number;
+  subscriptionId?: number;
+  status?: ListInvoicesStatus;
+};
+
+export type ListInvoicesStatus =
+  (typeof ListInvoicesStatus)[keyof typeof ListInvoicesStatus];
+
+export const ListInvoicesStatus = {
+  pending: "pending",
+  paid: "paid",
+  overdue: "overdue",
+  cancelled: "cancelled",
+} as const;

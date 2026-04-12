@@ -14,3 +14,306 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary List all customers
+ */
+export const ListCustomersQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  status: zod.enum(["active", "inactive"]).optional(),
+});
+
+export const ListCustomersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  whatsapp: zod.string(),
+  cpfCnpj: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListCustomersResponse = zod.array(ListCustomersResponseItem);
+
+/**
+ * @summary Create a new customer
+ */
+export const CreateCustomerBody = zod.object({
+  name: zod.string(),
+  whatsapp: zod.string(),
+  cpfCnpj: zod.string(),
+  status: zod.enum(["active", "inactive"]).optional(),
+});
+
+/**
+ * @summary Get a customer by ID
+ */
+export const GetCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCustomerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  whatsapp: zod.string(),
+  cpfCnpj: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a customer
+ */
+export const UpdateCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCustomerBody = zod.object({
+  name: zod.string().optional(),
+  whatsapp: zod.string().optional(),
+  cpfCnpj: zod.string().optional(),
+  status: zod.enum(["active", "inactive"]).optional(),
+});
+
+export const UpdateCustomerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  whatsapp: zod.string(),
+  cpfCnpj: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a customer
+ */
+export const DeleteCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List all subscriptions
+ */
+export const ListSubscriptionsQueryParams = zod.object({
+  customerId: zod.coerce.number().optional(),
+  status: zod.enum(["active", "cancelled", "overdue"]).optional(),
+});
+
+export const ListSubscriptionsResponseItem = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string().optional(),
+  plan: zod.string(),
+  periodicity: zod.enum(["monthly", "annual"]),
+  amount: zod.number(),
+  status: zod.enum(["active", "cancelled", "overdue"]),
+  nextBillingDate: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListSubscriptionsResponse = zod.array(
+  ListSubscriptionsResponseItem,
+);
+
+/**
+ * @summary Create a new subscription
+ */
+export const CreateSubscriptionBody = zod.object({
+  customerId: zod.number(),
+  plan: zod.string(),
+  periodicity: zod.enum(["monthly", "annual"]),
+  amount: zod.number(),
+  nextBillingDate: zod.coerce.date(),
+});
+
+/**
+ * @summary Get subscription by ID
+ */
+export const GetSubscriptionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetSubscriptionResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string().optional(),
+  plan: zod.string(),
+  periodicity: zod.enum(["monthly", "annual"]),
+  amount: zod.number(),
+  status: zod.enum(["active", "cancelled", "overdue"]),
+  nextBillingDate: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a subscription
+ */
+export const UpdateSubscriptionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateSubscriptionBody = zod.object({
+  plan: zod.string().optional(),
+  periodicity: zod.enum(["monthly", "annual"]).optional(),
+  amount: zod.number().optional(),
+  status: zod.enum(["active", "cancelled", "overdue"]).optional(),
+  nextBillingDate: zod.coerce.date().optional(),
+});
+
+export const UpdateSubscriptionResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string().optional(),
+  plan: zod.string(),
+  periodicity: zod.enum(["monthly", "annual"]),
+  amount: zod.number(),
+  status: zod.enum(["active", "cancelled", "overdue"]),
+  nextBillingDate: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Cancel a subscription
+ */
+export const DeleteSubscriptionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List all invoices
+ */
+export const ListInvoicesQueryParams = zod.object({
+  customerId: zod.coerce.number().optional(),
+  subscriptionId: zod.coerce.number().optional(),
+  status: zod.enum(["pending", "paid", "overdue", "cancelled"]).optional(),
+});
+
+export const ListInvoicesResponseItem = zod.object({
+  id: zod.number(),
+  subscriptionId: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string().optional(),
+  amount: zod.number(),
+  status: zod.enum(["pending", "paid", "overdue", "cancelled"]),
+  dueDate: zod.coerce.date(),
+  paidAt: zod.coerce.date().nullish(),
+  pixCode: zod.string().nullish(),
+  pixQrCode: zod.string().nullish(),
+  externalId: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListInvoicesResponse = zod.array(ListInvoicesResponseItem);
+
+/**
+ * @summary Get invoice by ID
+ */
+export const GetInvoiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetInvoiceResponse = zod.object({
+  id: zod.number(),
+  subscriptionId: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string().optional(),
+  amount: zod.number(),
+  status: zod.enum(["pending", "paid", "overdue", "cancelled"]),
+  dueDate: zod.coerce.date(),
+  paidAt: zod.coerce.date().nullish(),
+  pixCode: zod.string().nullish(),
+  pixQrCode: zod.string().nullish(),
+  externalId: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Generate PIX charge for invoice
+ */
+export const GeneratePixChargeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GeneratePixChargeResponse = zod.object({
+  invoiceId: zod.number(),
+  qrCode: zod.string(),
+  pixCopiaECola: zod.string(),
+  externalId: zod.string(),
+});
+
+/**
+ * @summary Send payment reminder via WhatsApp
+ */
+export const SendPaymentReminderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SendPaymentReminderResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Get dashboard summary metrics
+ */
+export const GetDashboardSummaryResponse = zod.object({
+  mrr: zod.number(),
+  activeSubscriptions: zod.number(),
+  churnRate: zod.number(),
+  todayRevenue: zod.number(),
+  pendingInvoices: zod.number(),
+  overdueInvoices: zod.number(),
+});
+
+/**
+ * @summary Get recent payments
+ */
+export const GetRecentPaymentsResponseItem = zod.object({
+  id: zod.number(),
+  customerName: zod.string(),
+  amount: zod.number(),
+  paidAt: zod.coerce.date(),
+});
+export const GetRecentPaymentsResponse = zod.array(
+  GetRecentPaymentsResponseItem,
+);
+
+/**
+ * @summary Get monthly revenue data for charts
+ */
+export const GetMonthlyRevenueResponseItem = zod.object({
+  month: zod.string(),
+  revenue: zod.number(),
+});
+export const GetMonthlyRevenueResponse = zod.array(
+  GetMonthlyRevenueResponseItem,
+);
+
+/**
+ * @summary Process subscriptions due today (cron job)
+ */
+export const ProcessDueSubscriptionsResponse = zod.object({
+  processed: zod.number(),
+  successful: zod.number(),
+  failed: zod.number(),
+  message: zod.string(),
+});
+
+/**
+ * @summary QQPag payment confirmation webhook
+ */
+export const QqpagWebhookBody = zod.object({
+  transactionId: zod.string(),
+  externalId: zod.string(),
+  status: zod.string(),
+  amount: zod.number().optional(),
+  paidAt: zod.string().optional(),
+});
+
+export const QqpagWebhookResponse = zod.object({
+  received: zod.boolean(),
+});
