@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -211,6 +212,9 @@ export default function Invoices() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Cobrança PIX</DialogTitle>
+            <DialogDescription>
+              Escaneie o QR Code ou copie o código PIX para efetuar o pagamento.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {pixData?.qrCode && (

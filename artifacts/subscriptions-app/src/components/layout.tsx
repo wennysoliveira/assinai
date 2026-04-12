@@ -18,10 +18,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Customers", href: "/customers", icon: Users },
-  { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-  { name: "Invoices", href: "/invoices", icon: Receipt },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Clientes", href: "/customers", icon: Users },
+  { name: "Assinaturas", href: "/subscriptions", icon: CreditCard },
+  { name: "Faturas", href: "/invoices", icon: Receipt },
+  { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

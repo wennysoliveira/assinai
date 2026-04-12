@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -259,6 +260,9 @@ export default function Subscriptions() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Assinatura" : "Nova Assinatura"}</DialogTitle>
+            <DialogDescription>
+              {editingId ? "Atualize os dados da assinatura." : "Crie uma nova assinatura recorrente para um cliente."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {!editingId && (

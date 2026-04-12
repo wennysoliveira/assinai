@@ -35,7 +35,7 @@ export default function Settings() {
             </div>
             <div className="space-y-2">
               <Label>Token de Autenticação</Label>
-              <Input value="**********" type="password" disabled data-testid="input-qqpag-token" />
+              <Input value="••••••••••••••••" disabled data-testid="input-qqpag-token" className="font-mono tracking-widest" />
               <p className="text-xs text-muted-foreground">Variável: QQPAG_TOKEN</p>
             </div>
           </CardContent>
@@ -62,7 +62,7 @@ export default function Settings() {
             </div>
             <div className="space-y-2">
               <Label>Token de Autenticação</Label>
-              <Input value="**********" type="password" disabled data-testid="input-uazapi-token" />
+              <Input value="••••••••••••••••" disabled data-testid="input-uazapi-token" className="font-mono tracking-widest" />
               <p className="text-xs text-muted-foreground">Variável: UAZAPI_TOKEN</p>
             </div>
           </CardContent>
@@ -117,15 +117,20 @@ export default function Settings() {
                 <CardTitle className="text-lg">Cron Jobs</CardTitle>
                 <CardDescription>Processamento automático de cobranças</CardDescription>
               </div>
+              <Badge variant="default" className="ml-auto bg-emerald-600">Ativo</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-2">
+              <p className="text-sm font-medium">Cobrança Diária — 08:00 (America/Sao_Paulo)</p>
+              <p className="text-sm text-muted-foreground">
+                Todos os dias às 08h, o sistema processa automaticamente as assinaturas com vencimento no dia, 
+                cria as faturas, gera cobranças PIX e envia lembretes via WhatsApp. 
+                Faturas pendentes com data de vencimento passada são automaticamente marcadas como atrasadas.
+              </p>
+            </div>
             <p className="text-sm text-muted-foreground">
-              O sistema verifica diariamente as assinaturas com vencimento no dia atual e gera cobranças PIX automaticamente, 
-              enviando lembretes via WhatsApp para os clientes.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Endpoint manual: <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">POST /api/billing/process-due</code>
+              Execução manual: <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">POST /api/billing/process-due</code>
             </p>
           </CardContent>
         </Card>

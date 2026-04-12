@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, lte, sql } from "drizzle-orm";
+import { eq, and, lte, lt, sql } from "drizzle-orm";
 import { db, subscriptionsTable, invoicesTable, customersTable } from "@workspace/db";
 import {
   ProcessDueSubscriptionsResponse,
@@ -10,11 +10,36 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-router.post("/billing/process-due", async (_req, res): Promise<void> => {
+export async function markOverdueInvoices(): Promise<number> {
+  const now = new Date();
+  const result = await db
+    .update(invoicesTable)
+    .set({ status: "overdue" })
+    .where(
+      and(
+        eq(invoicesTable.status, "pending"),
+        lt(invoicesTable.dueDate, now)
+      )
+    )
+    .returning({ id: invoicesTable.id });
+
+  if (result.length > 0) {
+    logger.info({ count: result.length }, "Marked invoices as overdue");
+  }
+
+  return result.length;
+}
+
+export async function processDueSubscriptions(): Promise<{ processed: number; successful: number; failed: number; overdue: number }> {
   logger.info("Processing due subscriptions");
+
+  const overdue = await markOverdueInvoices();
 
   const today = new Date();
   today.setHours(23, 59, 59, 999);
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
   const dueSubscriptions = await db
     .select({
@@ -42,6 +67,24 @@ router.post("/billing/process-due", async (_req, res): Promise<void> => {
 
   for (const sub of dueSubscriptions) {
     try {
+      const existingInvoice = await db
+        .select({ id: invoicesTable.id })
+        .from(invoicesTable)
+        .where(
+          and(
+            eq(invoicesTable.subscriptionId, sub.id),
+            sql`${invoicesTable.dueDate}::date = ${sub.nextBillingDate}::date`,
+            sql`${invoicesTable.status} IN ('pending','paid')`
+          )
+        )
+        .limit(1);
+
+      if (existingInvoice.length > 0) {
+        logger.info({ subscriptionId: sub.id, invoiceId: existingInvoice[0].id }, "Invoice already exists for this period, skipping");
+        successful++;
+        continue;
+      }
+
       const [invoice] = await db
         .insert(invoicesTable)
         .values({
@@ -106,11 +149,17 @@ router.post("/billing/process-due", async (_req, res): Promise<void> => {
     }
   }
 
+  return { processed: dueSubscriptions.length, successful, failed, overdue };
+}
+
+router.post("/billing/process-due", async (_req, res): Promise<void> => {
+  const result = await processDueSubscriptions();
+
   res.json(ProcessDueSubscriptionsResponse.parse({
-    processed: dueSubscriptions.length,
-    successful,
-    failed,
-    message: `Processed ${dueSubscriptions.length} subscriptions: ${successful} successful, ${failed} failed`,
+    processed: result.processed,
+    successful: result.successful,
+    failed: result.failed,
+    message: `Processadas ${result.processed} assinaturas: ${result.successful} com sucesso, ${result.failed} com falha. ${result.overdue} faturas marcadas como atrasadas.`,
   }));
 });
 

@@ -1,5 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import cron from "node-cron";
+import { processDueSubscriptions } from "./routes/billing";
 
 const rawPort = process.env["PORT"];
 
@@ -23,3 +25,17 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
 });
+
+cron.schedule("0 8 * * *", async () => {
+  logger.info("Running scheduled billing job (daily 08:00)");
+  try {
+    const result = await processDueSubscriptions();
+    logger.info(result, "Scheduled billing job completed");
+  } catch (err) {
+    logger.error({ err }, "Scheduled billing job failed");
+  }
+}, {
+  timezone: "America/Sao_Paulo",
+});
+
+logger.info("Cron job scheduled: daily billing at 08:00 (America/Sao_Paulo)");

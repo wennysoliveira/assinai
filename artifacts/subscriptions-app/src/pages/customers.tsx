@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -239,6 +240,9 @@ export default function Customers() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+            <DialogDescription>
+              {editingId ? "Atualize os dados do cliente." : "Preencha os dados para cadastrar um novo cliente."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
