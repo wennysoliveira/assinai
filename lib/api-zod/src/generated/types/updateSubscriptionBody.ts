@@ -9,6 +9,8 @@ import type { UpdateSubscriptionBodyPeriodicity } from "./updateSubscriptionBody
 import type { UpdateSubscriptionBodyStatus } from "./updateSubscriptionBodyStatus";
 
 export interface UpdateSubscriptionBody {
+  /** @nullable */
+  serviceId?: number | null;
   plan?: string;
   periodicity?: UpdateSubscriptionBodyPeriodicity;
   amount?: number;

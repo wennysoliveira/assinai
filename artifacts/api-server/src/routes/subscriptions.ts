@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, subscriptionsTable, customersTable } from "@workspace/db";
+import { db, subscriptionsTable, customersTable, servicesTable } from "@workspace/db";
 import {
   ListSubscriptionsQueryParams,
   ListSubscriptionsResponse,
@@ -31,6 +31,8 @@ router.get("/subscriptions", async (req, res): Promise<void> => {
       id: subscriptionsTable.id,
       customerId: subscriptionsTable.customerId,
       customerName: customersTable.name,
+      serviceId: subscriptionsTable.serviceId,
+      serviceName: servicesTable.name,
       plan: subscriptionsTable.plan,
       periodicity: subscriptionsTable.periodicity,
       amount: subscriptionsTable.amount,
@@ -41,6 +43,7 @@ router.get("/subscriptions", async (req, res): Promise<void> => {
     })
     .from(subscriptionsTable)
     .leftJoin(customersTable, eq(subscriptionsTable.customerId, customersTable.id))
+    .leftJoin(servicesTable, eq(subscriptionsTable.serviceId, servicesTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(subscriptionsTable.nextBillingDate);
 
@@ -48,6 +51,8 @@ router.get("/subscriptions", async (req, res): Promise<void> => {
     ...r,
     amount: Number(r.amount),
     customerName: r.customerName || "Unknown",
+    serviceId: r.serviceId ?? null,
+    serviceName: r.serviceName ?? null,
   }));
 
   res.json(ListSubscriptionsResponse.parse(mapped));
@@ -70,6 +75,15 @@ router.post("/subscriptions", async (req, res): Promise<void> => {
     return;
   }
 
+  let serviceName: string | null = null;
+  if (parsed.data.serviceId) {
+    const [service] = await db
+      .select()
+      .from(servicesTable)
+      .where(eq(servicesTable.id, parsed.data.serviceId));
+    serviceName = service?.name ?? null;
+  }
+
   const [subscription] = await db
     .insert(subscriptionsTable)
     .values({
@@ -82,6 +96,8 @@ router.post("/subscriptions", async (req, res): Promise<void> => {
     ...subscription,
     amount: Number(subscription.amount),
     customerName: customer.name,
+    serviceId: subscription.serviceId ?? null,
+    serviceName,
   };
 
   res.status(201).json(GetSubscriptionResponse.parse(result));
@@ -99,6 +115,8 @@ router.get("/subscriptions/:id", async (req, res): Promise<void> => {
       id: subscriptionsTable.id,
       customerId: subscriptionsTable.customerId,
       customerName: customersTable.name,
+      serviceId: subscriptionsTable.serviceId,
+      serviceName: servicesTable.name,
       plan: subscriptionsTable.plan,
       periodicity: subscriptionsTable.periodicity,
       amount: subscriptionsTable.amount,
@@ -109,6 +127,7 @@ router.get("/subscriptions/:id", async (req, res): Promise<void> => {
     })
     .from(subscriptionsTable)
     .leftJoin(customersTable, eq(subscriptionsTable.customerId, customersTable.id))
+    .leftJoin(servicesTable, eq(subscriptionsTable.serviceId, servicesTable.id))
     .where(eq(subscriptionsTable.id, params.data.id));
 
   if (!result) {
@@ -120,6 +139,8 @@ router.get("/subscriptions/:id", async (req, res): Promise<void> => {
     ...result,
     amount: Number(result.amount),
     customerName: result.customerName || "Unknown",
+    serviceId: result.serviceId ?? null,
+    serviceName: result.serviceName ?? null,
   }));
 });
 
@@ -157,10 +178,21 @@ router.patch("/subscriptions/:id", async (req, res): Promise<void> => {
     .from(customersTable)
     .where(eq(customersTable.id, subscription.customerId));
 
+  let serviceName: string | null = null;
+  if (subscription.serviceId) {
+    const [service] = await db
+      .select()
+      .from(servicesTable)
+      .where(eq(servicesTable.id, subscription.serviceId));
+    serviceName = service?.name ?? null;
+  }
+
   res.json(UpdateSubscriptionResponse.parse({
     ...subscription,
     amount: Number(subscription.amount),
     customerName: customer?.name || "Unknown",
+    serviceId: subscription.serviceId ?? null,
+    serviceName,
   }));
 });
 

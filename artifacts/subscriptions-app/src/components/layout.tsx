@@ -9,6 +9,7 @@ import {
   Menu,
   Bell,
   Search,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Clientes", href: "/customers", icon: Users },
+  { name: "Serviços", href: "/services", icon: Layers },
   { name: "Assinaturas", href: "/subscriptions", icon: CreditCard },
   { name: "Faturas", href: "/invoices", icon: Receipt },
   { name: "Configurações", href: "/settings", icon: Settings },

@@ -9,6 +9,8 @@ import type { CreateSubscriptionBodyPeriodicity } from "./createSubscriptionBody
 
 export interface CreateSubscriptionBody {
   customerId: number;
+  /** @nullable */
+  serviceId?: number | null;
   plan: string;
   periodicity: CreateSubscriptionBodyPeriodicity;
   amount: number;

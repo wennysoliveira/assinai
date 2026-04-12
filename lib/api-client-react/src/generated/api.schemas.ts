@@ -57,6 +57,27 @@ export interface UpdateCustomerBody {
   status?: UpdateCustomerBodyStatus;
 }
 
+export interface Service {
+  id: number;
+  name: string;
+  description: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateServiceBody {
+  name: string;
+  description?: string;
+  active?: boolean;
+}
+
+export interface UpdateServiceBody {
+  name?: string;
+  description?: string;
+  active?: boolean;
+}
+
 export type SubscriptionPeriodicity =
   (typeof SubscriptionPeriodicity)[keyof typeof SubscriptionPeriodicity];
 
@@ -78,6 +99,10 @@ export interface Subscription {
   id: number;
   customerId: number;
   customerName?: string;
+  /** @nullable */
+  serviceId?: number | null;
+  /** @nullable */
+  serviceName?: string | null;
   plan: string;
   periodicity: SubscriptionPeriodicity;
   amount: number;
@@ -97,6 +122,8 @@ export const CreateSubscriptionBodyPeriodicity = {
 
 export interface CreateSubscriptionBody {
   customerId: number;
+  /** @nullable */
+  serviceId?: number | null;
   plan: string;
   periodicity: CreateSubscriptionBodyPeriodicity;
   amount: number;
@@ -121,6 +148,8 @@ export const UpdateSubscriptionBodyStatus = {
 } as const;
 
 export interface UpdateSubscriptionBody {
+  /** @nullable */
+  serviceId?: number | null;
   plan?: string;
   periodicity?: UpdateSubscriptionBodyPeriodicity;
   amount?: number;
@@ -208,6 +237,11 @@ export interface QQPagWebhookPayload {
 export interface WebhookResult {
   received: boolean;
 }
+
+export type ListServicesParams = {
+  search?: string;
+  active?: boolean;
+};
 
 export type ListCustomersParams = {
   search?: string;

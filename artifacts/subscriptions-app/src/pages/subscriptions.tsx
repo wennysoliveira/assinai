@@ -5,6 +5,7 @@ import {
   useUpdateSubscription,
   useDeleteSubscription,
   useListCustomers,
+  useListServices,
   getListSubscriptionsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +44,7 @@ import { Plus, Pencil, Trash2, CreditCard } from "lucide-react";
 
 interface SubscriptionForm {
   customerId: number;
+  serviceId: number | null;
   plan: string;
   periodicity: "monthly" | "annual";
   amount: number;
@@ -51,6 +53,7 @@ interface SubscriptionForm {
 
 const emptyForm: SubscriptionForm = {
   customerId: 0,
+  serviceId: null,
   plan: "",
   periodicity: "monthly",
   amount: 0,
@@ -76,6 +79,8 @@ export default function Subscriptions() {
   const { data: customers } = useListCustomers(undefined, {
     query: { queryKey: ["/api/customers"] },
   });
+
+  const { data: services } = useListServices();
 
   const createSubscription = useCreateSubscription({
     mutation: {
@@ -121,6 +126,7 @@ export default function Subscriptions() {
       updateSubscription.mutate({
         id: editingId,
         data: {
+          serviceId: form.serviceId,
           plan: form.plan,
           periodicity: form.periodicity,
           amount: form.amount,
@@ -137,10 +143,11 @@ export default function Subscriptions() {
     }
   };
 
-  const handleEdit = (sub: { id: number; plan: string; periodicity: string; amount: number; nextBillingDate: string; customerId: number }) => {
+  const handleEdit = (sub: { id: number; plan: string; periodicity: string; amount: number; nextBillingDate: string; customerId: number; serviceId?: number | null }) => {
     setEditingId(sub.id);
     setForm({
       customerId: sub.customerId,
+      serviceId: sub.serviceId ?? null,
       plan: sub.plan,
       periodicity: sub.periodicity as "monthly" | "annual",
       amount: sub.amount,
@@ -215,6 +222,7 @@ export default function Subscriptions() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cliente</TableHead>
+                    <TableHead>Serviço</TableHead>
                     <TableHead>Plano</TableHead>
                     <TableHead>Periodicidade</TableHead>
                     <TableHead>Valor</TableHead>
@@ -227,6 +235,7 @@ export default function Subscriptions() {
                   {subscriptions.map((sub) => (
                     <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
                       <TableCell className="font-medium">{sub.customerName || "-"}</TableCell>
+                      <TableCell className="text-muted-foreground">{sub.serviceName || <span className="text-xs italic">—</span>}</TableCell>
                       <TableCell>{sub.plan}</TableCell>
                       <TableCell>{sub.periodicity === "monthly" ? "Mensal" : "Anual"}</TableCell>
                       <TableCell>{formatCurrency(sub.amount)}</TableCell>
@@ -285,6 +294,23 @@ export default function Subscriptions() {
                 </Select>
               </div>
             )}
+            <div className="space-y-2">
+              <Label>Serviço</Label>
+              <Select
+                value={form.serviceId ? String(form.serviceId) : "none"}
+                onValueChange={(v) => setForm({ ...form, serviceId: v === "none" ? null : Number(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um serviço (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {services?.filter((s) => s.active).map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="plan">Plano</Label>
               <Input

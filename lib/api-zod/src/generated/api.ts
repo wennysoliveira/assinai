@@ -16,6 +16,78 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary List all services
+ */
+export const ListServicesQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  active: zod.coerce.boolean().optional(),
+});
+
+export const ListServicesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListServicesResponse = zod.array(ListServicesResponseItem);
+
+/**
+ * @summary Create a new service
+ */
+export const CreateServiceBody = zod.object({
+  name: zod.string(),
+  description: zod.string().optional(),
+  active: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get a service by ID
+ */
+export const GetServiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetServiceResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a service
+ */
+export const UpdateServiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateServiceBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().optional(),
+  active: zod.boolean().optional(),
+});
+
+export const UpdateServiceResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a service
+ */
+export const DeleteServiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List all customers
  */
 export const ListCustomersQueryParams = zod.object({
@@ -104,6 +176,8 @@ export const ListSubscriptionsResponseItem = zod.object({
   id: zod.number(),
   customerId: zod.number(),
   customerName: zod.string().optional(),
+  serviceId: zod.number().nullish(),
+  serviceName: zod.string().nullish(),
   plan: zod.string(),
   periodicity: zod.enum(["monthly", "annual"]),
   amount: zod.number(),
@@ -121,6 +195,7 @@ export const ListSubscriptionsResponse = zod.array(
  */
 export const CreateSubscriptionBody = zod.object({
   customerId: zod.number(),
+  serviceId: zod.number().nullish(),
   plan: zod.string(),
   periodicity: zod.enum(["monthly", "annual"]),
   amount: zod.number(),
@@ -138,6 +213,8 @@ export const GetSubscriptionResponse = zod.object({
   id: zod.number(),
   customerId: zod.number(),
   customerName: zod.string().optional(),
+  serviceId: zod.number().nullish(),
+  serviceName: zod.string().nullish(),
   plan: zod.string(),
   periodicity: zod.enum(["monthly", "annual"]),
   amount: zod.number(),
@@ -155,6 +232,7 @@ export const UpdateSubscriptionParams = zod.object({
 });
 
 export const UpdateSubscriptionBody = zod.object({
+  serviceId: zod.number().nullish(),
   plan: zod.string().optional(),
   periodicity: zod.enum(["monthly", "annual"]).optional(),
   amount: zod.number().optional(),
@@ -166,6 +244,8 @@ export const UpdateSubscriptionResponse = zod.object({
   id: zod.number(),
   customerId: zod.number(),
   customerName: zod.string().optional(),
+  serviceId: zod.number().nullish(),
+  serviceName: zod.string().nullish(),
   plan: zod.string(),
   periodicity: zod.enum(["monthly", "annual"]),
   amount: zod.number(),

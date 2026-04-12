@@ -9,6 +9,7 @@ import Customers from "@/pages/customers";
 import Subscriptions from "@/pages/subscriptions";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
+import Services from "@/pages/services";
 import { applyStoredThemeColors } from "@/hooks/use-theme-color";
 
 applyStoredThemeColors();
@@ -43,6 +44,11 @@ function Router() {
       <Route path="/invoices">
         <Layout>
           <Invoices />
+        </Layout>
+      </Route>
+      <Route path="/services">
+        <Layout>
+          <Services />
         </Layout>
       </Route>
       <Route path="/settings">

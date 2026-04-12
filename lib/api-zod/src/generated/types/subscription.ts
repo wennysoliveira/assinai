@@ -12,6 +12,10 @@ export interface Subscription {
   id: number;
   customerId: number;
   customerName?: string;
+  /** @nullable */
+  serviceId?: number | null;
+  /** @nullable */
+  serviceName?: string | null;
   plan: string;
   periodicity: SubscriptionPeriodicity;
   amount: number;
