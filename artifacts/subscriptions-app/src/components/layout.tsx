@@ -73,7 +73,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <AvatarFallback className="bg-primary/10 text-primary">AD</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-sidebar-foreground">Admin User</span>
+            <span className="text-sm font-medium text-sidebar-foreground">Administrador</span>
             <span className="text-xs text-muted-foreground">admin@recorrente.co</span>
           </div>
         </div>
@@ -108,7 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search anything..."
+                placeholder="Buscar..."
                 className="w-64 pl-9 bg-muted/50 border-none focus-visible:ring-1 focus-visible:bg-background"
               />
             </div>

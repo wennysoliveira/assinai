@@ -28,7 +28,7 @@ export default function Dashboard() {
     mutation: {
       onSuccess: (data) => {
         toast({
-          title: "Subscriptions processed",
+          title: "Assinaturas processadas",
           description: data.message,
         });
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
@@ -36,8 +36,8 @@ export default function Dashboard() {
       onError: (error: any) => {
         toast({
           variant: "destructive",
-          title: "Error processing subscriptions",
-          description: error.message || "An unexpected error occurred",
+          title: "Erro ao processar assinaturas",
+          description: error.message || "Ocorreu um erro inesperado",
         });
       }
     }
@@ -48,7 +48,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Overview of your recurring revenue and metrics.</p>
+          <p className="text-muted-foreground mt-1">Visão geral da sua receita recorrente e métricas.</p>
         </div>
         <Button 
           onClick={() => processSubscriptions.mutate({})} 
@@ -56,15 +56,14 @@ export default function Dashboard() {
           className="gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${processSubscriptions.isPending ? "animate-spin" : ""}`} />
-          Process Due Subscriptions
+          Processar Cobranças
         </Button>
       </div>
 
-      {/* Metrics Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="hover-elevate transition-all border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Recurring Revenue (MRR)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Receita Mensal Recorrente (MRR)</CardTitle>
             <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
               <CreditCard className="h-4 w-4 text-primary" />
             </div>
@@ -78,9 +77,9 @@ export default function Dashboard() {
                 <div className="flex items-center text-xs text-muted-foreground mt-2">
                   <span className="flex items-center text-success font-medium mr-2">
                     <ArrowUpRight className="h-3 w-3 mr-1" />
-                    +4.5%
+                    +4,5%
                   </span>
-                  from last month
+                  em relação ao mês anterior
                 </div>
               </>
             )}
@@ -89,7 +88,7 @@ export default function Dashboard() {
 
         <Card className="hover-elevate transition-all border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Subscriptions</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Assinaturas Ativas</CardTitle>
             <div className="w-8 h-8 rounded bg-success/10 flex items-center justify-center">
               <Users className="h-4 w-4 text-success" />
             </div>
@@ -105,7 +104,7 @@ export default function Dashboard() {
                     <ArrowUpRight className="h-3 w-3 mr-1" />
                     +12
                   </span>
-                  new this month
+                  novas este mês
                 </div>
               </>
             )}
@@ -114,7 +113,7 @@ export default function Dashboard() {
 
         <Card className="hover-elevate transition-all border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Churn Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Taxa de Cancelamento</CardTitle>
             <div className="w-8 h-8 rounded bg-destructive/10 flex items-center justify-center">
               <ArrowDownRight className="h-4 w-4 text-destructive" />
             </div>
@@ -124,13 +123,13 @@ export default function Dashboard() {
               <Skeleton className="h-8 w-24 mt-1" />
             ) : (
               <>
-                <div className="text-3xl font-bold">{summary?.churnRate?.toFixed(1) || "0.0"}%</div>
+                <div className="text-3xl font-bold">{summary?.churnRate?.toFixed(1) || "0,0"}%</div>
                 <div className="flex items-center text-xs text-muted-foreground mt-2">
                   <span className="flex items-center text-destructive font-medium mr-2">
                     <ArrowUpRight className="h-3 w-3 mr-1" />
-                    +0.2%
+                    +0,2%
                   </span>
-                  from last month
+                  em relação ao mês anterior
                 </div>
               </>
             )}
@@ -139,7 +138,7 @@ export default function Dashboard() {
 
         <Card className="hover-elevate transition-all border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Today's Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Receita Hoje</CardTitle>
             <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
               <CreditCard className="h-4 w-4 text-primary" />
             </div>
@@ -155,7 +154,7 @@ export default function Dashboard() {
 
         <Card className="hover-elevate transition-all border-border shadow-sm bg-warning/5 border-warning/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-warning-foreground">Pending Invoices</CardTitle>
+            <CardTitle className="text-sm font-medium text-warning-foreground">Faturas Pendentes</CardTitle>
             <div className="w-8 h-8 rounded bg-warning/20 flex items-center justify-center">
               <Receipt className="h-4 w-4 text-warning-foreground" />
             </div>
@@ -171,7 +170,7 @@ export default function Dashboard() {
 
         <Card className="hover-elevate transition-all border-border shadow-sm bg-destructive/5 border-destructive/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-destructive">Overdue Invoices</CardTitle>
+            <CardTitle className="text-sm font-medium text-destructive">Faturas Atrasadas</CardTitle>
             <div className="w-8 h-8 rounded bg-destructive/20 flex items-center justify-center">
               <AlertCircle className="h-4 w-4 text-destructive" />
             </div>
@@ -187,10 +186,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Chart */}
         <Card className="lg:col-span-2 shadow-sm border-border">
           <CardHeader>
-            <CardTitle>Revenue Overview</CardTitle>
+            <CardTitle>Visão de Receita</CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             {isLoadingRevenue ? (
@@ -225,7 +223,7 @@ export default function Dashboard() {
                         borderRadius: 'var(--radius)',
                         boxShadow: 'var(--shadow-md)'
                       }}
-                      formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+                      formatter={(value: number) => [formatCurrency(value), "Receita"]}
                     />
                     <Bar 
                       dataKey="revenue" 
@@ -240,10 +238,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Payments */}
         <Card className="shadow-sm border-border">
           <CardHeader>
-            <CardTitle>Recent Payments</CardTitle>
+            <CardTitle>Pagamentos Recentes</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoadingPayments ? (
@@ -263,7 +260,7 @@ export default function Dashboard() {
               </div>
             ) : recentPayments?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm">
-                No recent payments
+                Nenhum pagamento recente
               </div>
             ) : (
               <div className="space-y-6">
