@@ -83,7 +83,7 @@ export default function Login() {
             <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/20 shadow">
               <CreditCard className="w-5 h-5 text-white" />
             </div>
-            <span className="text-white font-bold text-xl tracking-tight">Recorrente</span>
+            <span className="text-white font-bold text-xl tracking-tight">assin<span className="text-indigo-300">AI</span></span>
           </div>
 
           {/* Center content */}
@@ -142,7 +142,7 @@ export default function Login() {
             >
               <CreditCard className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-foreground">Recorrente</span>
+            <span className="font-bold text-foreground">assin<span className="text-primary">AI</span></span>
           </div>
           <div className="w-24 hidden lg:block" />
         </div>
@@ -242,7 +242,7 @@ export default function Login() {
         {/* Bottom bar */}
         <div className="px-8 py-4 border-t border-border text-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Recorrente — Gestão de Assinaturas Recorrentes
+            © {new Date().getFullYear()} assinAI — Gestão de Assinaturas
           </p>
         </div>
       </div>

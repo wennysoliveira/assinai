@@ -49,7 +49,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-primary-foreground">
             <CreditCard className="w-5 h-5" />
           </div>
-          <span>Recorrente</span>
+          <span>assin<span className="text-primary">AI</span></span>
         </div>
       </div>
 

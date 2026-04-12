@@ -82,7 +82,7 @@ export default function Home() {
           >
             <CreditCard className="w-4 h-4" />
           </div>
-          Recorrente
+          assin<span className="text-primary">AI</span>
         </div>
         <Link href="/login">
           <Button className="gap-2">
@@ -111,7 +111,7 @@ export default function Home() {
           style={{ background: "linear-gradient(135deg, #7c3aed, #4c1d95)" }}
         >
           <Zap className="w-3.5 h-3.5" />
-          Gestão de Assinaturas Recorrentes
+          Gestão de Assinaturas com IA
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground max-w-3xl leading-[1.1] mb-5">
@@ -156,7 +156,7 @@ export default function Home() {
               Tudo que você precisa em um só lugar
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Do cadastro do cliente à confirmação do pagamento, o Recorrente
+              Do cadastro do cliente à confirmação do pagamento, o assinAI
               cuida de todo o ciclo de cobrança para você.
             </p>
           </div>
@@ -194,14 +194,14 @@ export default function Home() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-medium mb-4">
               <Shield className="w-3.5 h-3.5" />
-              Por que o Recorrente?
+              Por que o assinAI?
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
               Automatize e escale sem aumentar sua equipe
             </h2>
             <p className="text-white/70 leading-relaxed mb-8">
               Com processos manuais, cobranças atrasam e clientes ficam inadimplentes.
-              O Recorrente automatiza todo o ciclo de cobrança — você só acompanha os resultados.
+              O assinAI automatiza todo o ciclo de cobrança — você só acompanha os resultados.
             </p>
             <Link href="/login">
               <Button
@@ -256,7 +256,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border">
-        © {new Date().getFullYear()} Recorrente. Todos os direitos reservados.
+        © {new Date().getFullYear()} assinAI. Todos os direitos reservados.
       </footer>
     </div>
   );
