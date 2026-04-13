@@ -17,15 +17,6 @@ localPort = 19664
 [services.development]
 run = "pnpm --filter @workspace/subscriptions-app run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/subscriptions-app", "run", "build" ]
-publicDir = "artifacts/subscriptions-app/dist/public"
-serve = "static"
-
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
-
 [services.env]
 PORT = "19664"
 BASE_PATH = "/"

@@ -50,3 +50,6 @@ Thumbs.db
 
 # Database backups
 backups/
+
+# Frontend build copied into API server for production
+artifacts/api-server/public/
