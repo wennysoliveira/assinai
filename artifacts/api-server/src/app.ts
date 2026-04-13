@@ -1,11 +1,13 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import pinoHttp from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { pool } from "@workspace/db";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,8 +37,14 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const sessionStore =
+  process.env.NODE_ENV === "production"
+    ? new (connectPgSimple(session))({ pool, createTableIfMissing: true })
+    : undefined;
+
 app.use(
   session({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || "recorrente-secret",
     resave: false,
     saveUninitialized: false,
@@ -53,7 +61,7 @@ app.use("/api", router);
 if (process.env.NODE_ENV === "production") {
   const publicPath = path.join(__dirname, "..", "public");
   app.use(express.static(publicPath));
-  app.get("*", (_req, res) => {
+  app.use((_req, res) => {
     res.sendFile(path.join(publicPath, "index.html"));
   });
 }
