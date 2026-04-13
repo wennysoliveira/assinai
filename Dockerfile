@@ -3,7 +3,7 @@
 # =============================================================
 # Estágio 1: Builder — instala deps e compila frontend + backend
 # =============================================================
-FROM node:22-alpine AS builder
+FROM node:22-slim AS builder
 
 RUN corepack enable && corepack prepare pnpm@10 --activate
 
@@ -33,7 +33,7 @@ RUN pnpm --filter @workspace/api-server run build
 # =============================================================
 # Estágio 2: Produção — imagem mínima com apenas os artefatos
 # =============================================================
-FROM node:22-alpine AS production
+FROM node:22-slim AS production
 
 WORKDIR /app
 
