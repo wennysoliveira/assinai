@@ -11,6 +11,7 @@ WORKDIR /app
 
 # Copia arquivos de configuração do workspace
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY tsconfig.base.json tsconfig.json ./
 
 # Copia código-fonte de todas as libs e artifacts
 COPY lib/           ./lib/
