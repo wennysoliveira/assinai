@@ -41,13 +41,33 @@ app.use(express.urlencoded({ extended: true }));
 
 const PgSession = connectPgSimple(session);
 
+async function ensureSessionTable() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+      ) WITH (OIDS=FALSE);
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+    `);
+    logger.info("Session table ready");
+  } catch (err) {
+    logger.error({ err }, "Failed to create session table");
+  } finally {
+    client.release();
+  }
+}
+
 let sessionStore: InstanceType<typeof PgSession> | undefined;
 if (process.env.NODE_ENV === "production") {
+  void ensureSessionTable();
   sessionStore = new PgSession({
     pool,
-    createTableIfMissing: true,
-    errorLog: (err: unknown) => {
-      logger.error({ err }, "connect-pg-simple session store error");
+    errorLog: (...args: unknown[]) => {
+      logger.error({ args }, "connect-pg-simple session store error");
     },
   });
 }
