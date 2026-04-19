@@ -13,6 +13,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app: Express = express();
 
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
@@ -37,10 +39,20 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sessionStore =
-  process.env.NODE_ENV === "production"
-    ? new (connectPgSimple(session))({ pool, createTableIfMissing: true })
-    : undefined;
+const PgSession = connectPgSimple(session);
+
+let sessionStore: InstanceType<typeof PgSession> | undefined;
+if (process.env.NODE_ENV === "production") {
+  sessionStore = new PgSession({
+    pool,
+    createTableIfMissing: true,
+    errorLog: (err: unknown) => {
+      logger.error({ err }, "connect-pg-simple session store error");
+    },
+  });
+}
+
+const isProduction = process.env.NODE_ENV === "production";
 
 app.use(
   session({
@@ -51,6 +63,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
+      secure: isProduction,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   }),

@@ -33,7 +33,9 @@ router.post("/auth/login", (req, res) => {
 
   req.session.save((err) => {
     if (err) {
-      res.status(500).json({ error: "Erro ao iniciar sessão" });
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("[auth] session.save error:", errorMessage, err);
+      res.status(500).json({ error: "Erro ao iniciar sessão", detail: errorMessage });
       return;
     }
     res.json({ email: ADMIN_EMAIL });
