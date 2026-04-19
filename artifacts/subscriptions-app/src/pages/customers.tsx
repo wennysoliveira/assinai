@@ -4,6 +4,7 @@ import {
   useCreateCustomer,
   useUpdateCustomer,
   useDeleteCustomer,
+  useSendWhatsAppMessage,
   getListCustomersQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +40,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, formatCpfCnpj } from "@/lib/utils";
-import { Plus, Search, Pencil, Trash2, Users } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Users, MessageCircle } from "lucide-react";
 
 interface CustomerForm {
   name: string;
@@ -62,6 +64,10 @@ export default function Customers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<CustomerForm>(emptyForm);
+
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [whatsappTarget, setWhatsappTarget] = useState<{ id: number; name: string; phone: string } | null>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState("");
 
   const params = {
     ...(search ? { search } : {}),
@@ -107,6 +113,22 @@ export default function Customers() {
     },
   });
 
+  const sendWhatsApp = useSendWhatsAppMessage({
+    mutation: {
+      onSuccess: (data) => {
+        if (data.success) {
+          toast({ title: "Mensagem enviada com sucesso!" });
+          setWhatsappDialogOpen(false);
+          setWhatsappMessage("");
+          setWhatsappTarget(null);
+        } else {
+          toast({ variant: "destructive", title: "Erro ao enviar mensagem", description: data.message });
+        }
+      },
+      onError: () => toast({ variant: "destructive", title: "Erro ao enviar mensagem" }),
+    },
+  });
+
   const handleSubmit = () => {
     if (!form.name || !form.whatsapp || !form.cpfCnpj) {
       toast({ variant: "destructive", title: "Preencha todos os campos obrigatórios" });
@@ -134,6 +156,23 @@ export default function Customers() {
     setEditingId(null);
     setForm(emptyForm);
     setDialogOpen(true);
+  };
+
+  const handleOpenWhatsApp = (customer: { id: number; name: string; whatsapp: string }) => {
+    setWhatsappTarget({ id: customer.id, name: customer.name, phone: customer.whatsapp });
+    setWhatsappMessage("");
+    setWhatsappDialogOpen(true);
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!whatsappMessage.trim()) {
+      toast({ variant: "destructive", title: "Digite uma mensagem antes de enviar" });
+      return;
+    }
+    if (!whatsappTarget) return;
+    sendWhatsApp.mutate({
+      data: { customerId: whatsappTarget.id, message: whatsappMessage },
+    });
   };
 
   return (
@@ -214,6 +253,15 @@ export default function Customers() {
                       <TableCell>{formatDate(customer.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenWhatsApp(customer)}
+                            title="Enviar mensagem WhatsApp"
+                            data-testid={`button-whatsapp-customer-${customer.id}`}
+                          >
+                            <MessageCircle className="w-4 h-4 text-green-600" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(customer)} data-testid={`button-edit-customer-${customer.id}`}>
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -236,6 +284,7 @@ export default function Customers() {
         </CardContent>
       </Card>
 
+      {/* Dialog: Criar/Editar Cliente */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -296,6 +345,64 @@ export default function Customers() {
               data-testid="button-save-customer"
             >
               {editingId ? "Salvar" : "Criar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Enviar mensagem WhatsApp */}
+      <Dialog open={whatsappDialogOpen} onOpenChange={(open) => {
+        setWhatsappDialogOpen(open);
+        if (!open) {
+          setWhatsappMessage("");
+          setWhatsappTarget(null);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-green-600" />
+              Enviar mensagem WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              {whatsappTarget
+                ? `Enviando para ${whatsappTarget.name} (${whatsappTarget.phone})`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp-message">Mensagem</Label>
+              <Textarea
+                id="whatsapp-message"
+                value={whatsappMessage}
+                onChange={(e) => setWhatsappMessage(e.target.value)}
+                placeholder="Digite a mensagem que será enviada ao assinante..."
+                rows={5}
+                className="resize-none"
+                data-testid="textarea-whatsapp-message"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {whatsappMessage.length} caracteres
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setWhatsappDialogOpen(false)}
+              disabled={sendWhatsApp.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendWhatsApp}
+              disabled={sendWhatsApp.isPending || !whatsappMessage.trim()}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+              data-testid="button-send-whatsapp"
+            >
+              <MessageCircle className="w-4 h-4" />
+              {sendWhatsApp.isPending ? "Enviando..." : "Enviar"}
             </Button>
           </DialogFooter>
         </DialogContent>

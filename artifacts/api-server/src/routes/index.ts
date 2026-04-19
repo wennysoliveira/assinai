@@ -9,6 +9,7 @@ import invoicesRouter from "./invoices";
 import dashboardRouter from "./dashboard";
 import billingRouter from "./billing";
 import webhooksRouter from "./webhooks";
+import whatsappRouter from "./whatsapp";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(invoicesRouter);
 router.use(dashboardRouter);
 router.use(billingRouter);
 router.use(webhooksRouter);
+router.use(whatsappRouter);
 
 export default router;

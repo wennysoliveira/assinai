@@ -24,6 +24,8 @@ tags:
     description: Billing operations
   - name: webhooks
     description: Webhook operations
+  - name: whatsapp
+    description: WhatsApp messaging operations
 paths:
   /healthz:
     get:
@@ -494,6 +496,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookResult"
 
+  /whatsapp/send:
+    post:
+      operationId: sendWhatsAppMessage
+      tags: [whatsapp]
+      summary: Send a WhatsApp message to a customer via Meta API
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendWhatsAppMessageBody"
+      responses:
+        "200":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResult"
+
 components:
   schemas:
     HealthStatus:
@@ -756,6 +777,21 @@ components:
         - qrCode
         - pixCopiaECola
         - externalId
+
+    SendWhatsAppMessageBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          description: ID do cliente (opcional, usa o whatsapp do cadastro)
+        phone:
+          type: string
+          description: Número de WhatsApp (ex: 5511999999999), necessário se customerId não for fornecido
+        message:
+          type: string
+          description: Texto da mensagem a ser enviada
+      required:
+        - message
 
     MessageResult:
       type: object

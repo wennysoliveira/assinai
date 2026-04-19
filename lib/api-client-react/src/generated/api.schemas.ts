@@ -193,6 +193,12 @@ export interface PixCharge {
   externalId: string;
 }
 
+export interface SendWhatsAppMessageBody {
+  customerId?: number;
+  phone?: string;
+  message: string;
+}
+
 export interface MessageResult {
   success: boolean;
   message: string;

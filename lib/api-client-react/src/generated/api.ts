@@ -31,6 +31,7 @@ import type {
   ListSubscriptionsParams,
   MessageResult,
   MonthlyRevenue,
+  SendWhatsAppMessageBody,
   PixCharge,
   QQPagWebhookPayload,
   RecentPayment,
@@ -2183,4 +2184,86 @@ export const useQqpagWebhook = <
   TContext
 > => {
   return useMutation(getQqpagWebhookMutationOptions(options));
+};
+
+/**
+ * @summary Send a WhatsApp message to a customer via Meta API
+ */
+export const getSendWhatsAppMessageUrl = () => {
+  return `/api/whatsapp/send`;
+};
+
+export const sendWhatsAppMessage = async (
+  sendWhatsAppMessageBody: BodyType<SendWhatsAppMessageBody>,
+  options?: RequestInit,
+): Promise<MessageResult> => {
+  return customFetch<MessageResult>(getSendWhatsAppMessageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(sendWhatsAppMessageBody),
+  });
+};
+
+export const getSendWhatsAppMessageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendWhatsAppMessage>>,
+    TError,
+    { data: BodyType<SendWhatsAppMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendWhatsAppMessage>>,
+  TError,
+  { data: BodyType<SendWhatsAppMessageBody> },
+  TContext
+> => {
+  const mutationKey = ["sendWhatsAppMessage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendWhatsAppMessage>>,
+    { data: BodyType<SendWhatsAppMessageBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+    return sendWhatsAppMessage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendWhatsAppMessageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendWhatsAppMessage>>
+>;
+export type SendWhatsAppMessageMutationBody = BodyType<SendWhatsAppMessageBody>;
+export type SendWhatsAppMessageMutationError = ErrorType<unknown>;
+
+export const useSendWhatsAppMessage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendWhatsAppMessage>>,
+    TError,
+    { data: BodyType<SendWhatsAppMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendWhatsAppMessage>>,
+  TError,
+  { data: BodyType<SendWhatsAppMessageBody> },
+  TContext
+> => {
+  return useMutation(getSendWhatsAppMessageMutationOptions(options));
 };
