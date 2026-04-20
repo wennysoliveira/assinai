@@ -152,7 +152,17 @@ export default function Login() {
           <div className="w-full max-w-md space-y-8">
             {/* Header */}
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">Bem-vindo de volta</h1>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-md shrink-0"
+                  style={{ background: "linear-gradient(135deg, #7c3aed, #2563eb)" }}
+                >
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <span className="text-3xl font-extrabold text-foreground tracking-tight">
+                  assin<span style={{ color: "#7c3aed" }}>AI</span>
+                </span>
+              </div>
               <p className="text-muted-foreground text-sm">
                 Faça login para acessar o painel de gestão
               </p>
