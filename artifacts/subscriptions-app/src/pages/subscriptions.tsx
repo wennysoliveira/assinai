@@ -69,8 +69,6 @@ export default function Subscriptions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<SubscriptionForm>(emptyForm);
-  const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<number | null>(null);
-
   const params = {
     ...(statusFilter !== "all" ? { status: statusFilter as "active" | "cancelled" | "overdue" } : {}),
   };
@@ -120,14 +118,6 @@ export default function Subscriptions() {
     },
   });
 
-  const activeInvoiceQuery = expandedSubscriptionId ? { subscriptionId: expandedSubscriptionId } : undefined;
-  const { data: subscriptionInvoices, isLoading: isLoadingInvoices } = useListInvoices(activeInvoiceQuery, {
-    query: {
-      queryKey: getListInvoicesQueryKey(activeInvoiceQuery),
-      enabled: !!expandedSubscriptionId,
-    },
-  });
-
   const handleSubmit = () => {
     if (!form.plan || !form.customerId || form.amount <= 0) {
       toast({ variant: "destructive", title: "Preencha todos os campos obrigatórios" });
@@ -152,6 +142,10 @@ export default function Subscriptions() {
         },
       });
     }
+  };
+
+  const handleOpenInvoices = (subscriptionId: number) => {
+    window.location.href = `/invoices?subscriptionId=${subscriptionId}`;
   };
 
   const handleEdit = (sub: { id: number; plan: string; periodicity: string; amount: number; nextBillingDate: string; customerId: number; serviceId?: number | null }) => {
@@ -275,7 +269,7 @@ export default function Subscriptions() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setExpandedSubscriptionId(expandedSubscriptionId === sub.id ? null : sub.id)}
+                            onClick={() => handleOpenInvoices(sub.id)}
                             data-testid={`button-view-invoices-${sub.id}`}
                           >
                             Faturas

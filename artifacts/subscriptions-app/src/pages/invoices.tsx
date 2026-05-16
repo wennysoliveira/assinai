@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useListInvoices,
   useGeneratePixCharge,
@@ -40,12 +40,20 @@ export default function Invoices() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [subscriptionIdFilter, setSubscriptionIdFilter] = useState<string>("");
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
   const [pixData, setPixData] = useState<{ qrCode: string; pixCopiaECola: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const subscriptionId = params.get("subscriptionId") || "";
+    setSubscriptionIdFilter(subscriptionId);
+  }, []);
+
   const params = {
     ...(statusFilter !== "all" ? { status: statusFilter as "pending" | "paid" | "overdue" | "cancelled" } : {}),
+    ...(subscriptionIdFilter ? { subscriptionId: Number(subscriptionIdFilter) } : {}),
   };
 
   const { data: invoices, isLoading } = useListInvoices(params, {
@@ -110,7 +118,7 @@ export default function Invoices() {
 
       <Card className="shadow-sm border-border">
         <CardHeader className="pb-4">
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-40" data-testid="select-invoice-status-filter">
                 <SelectValue placeholder="Status" />
@@ -123,6 +131,11 @@ export default function Invoices() {
                 <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>
             </Select>
+            {subscriptionIdFilter && (
+              <div className="text-sm text-muted-foreground flex items-center">
+                Filtro aplicado para a assinatura #{subscriptionIdFilter}
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
