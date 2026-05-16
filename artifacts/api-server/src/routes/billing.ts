@@ -4,7 +4,7 @@ import { db, subscriptionsTable, invoicesTable, customersTable } from "@workspac
 import {
   ProcessDueSubscriptionsResponse,
 } from "@workspace/api-zod";
-import { generatePixCharge } from "../services/qqpag";
+import { generatePixCharge, generateTxId } from "../services/qqpag";
 import { sendPaymentReminder } from "../services/uazapi";
 import { logger } from "../lib/logger";
 
@@ -96,11 +96,11 @@ export async function processDueSubscriptions(): Promise<{ processed: number; su
         })
         .returning();
 
-      const externalId = `INV-${invoice.id}-${Date.now()}`;
+      const txId = generateTxId(invoice.id);
 
       try {
         const pixResult = await generatePixCharge({
-          externalId,
+          txId,
           amount: Number(sub.amount),
           description: `${sub.plan} - Fatura #${invoice.id}`,
           cpfCnpj: sub.customerCpfCnpj || "",
@@ -112,7 +112,7 @@ export async function processDueSubscriptions(): Promise<{ processed: number; su
           .set({
             pixCode: pixResult.pixCopiaECola,
             pixQrCode: pixResult.qrCode,
-            externalId: pixResult.externalId,
+            externalId: pixResult.txId,
           })
           .where(eq(invoicesTable.id, invoice.id));
 

@@ -30,8 +30,7 @@ console.log(`Destino: ${outputPath}`);
 
 try {
   execSync(`pg_dump "${DATABASE_URL}" > "${outputPath}"`, {
-    stdio: ["inherit", "inherit", "inherit"],
-    shell: true,
+    stdio: "inherit",
   });
 
   console.log(`\nExportação concluída com sucesso!`);

@@ -86,7 +86,7 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1">Visão geral da sua receita recorrente e métricas.</p>
         </div>
         <Button
-          onClick={() => processSubscriptions.mutate({})}
+          onClick={() => processSubscriptions.mutate()}
           disabled={processSubscriptions.isPending}
           className="gap-2"
         >
