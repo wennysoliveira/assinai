@@ -6,7 +6,9 @@ import {
   useDeleteSubscription,
   useListCustomers,
   useListServices,
+  useListInvoices,
   getListSubscriptionsQueryKey,
+  getListInvoicesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -40,7 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Plus, Pencil, Trash2, CreditCard } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, ChevronDown, ChevronRight } from "lucide-react";
 
 interface SubscriptionForm {
   customerId: number;
@@ -67,6 +69,7 @@ export default function Subscriptions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<SubscriptionForm>(emptyForm);
+  const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<number | null>(null);
 
   const params = {
     ...(statusFilter !== "all" ? { status: statusFilter as "active" | "cancelled" | "overdue" } : {}),
@@ -114,6 +117,14 @@ export default function Subscriptions() {
         queryClient.invalidateQueries({ queryKey: getListSubscriptionsQueryKey() });
       },
       onError: () => toast({ variant: "destructive", title: "Erro ao cancelar assinatura" }),
+    },
+  });
+
+  const activeInvoiceQuery = expandedSubscriptionId ? { subscriptionId: expandedSubscriptionId } : undefined;
+  const { data: subscriptionInvoices, isLoading: isLoadingInvoices } = useListInvoices(activeInvoiceQuery, {
+    query: {
+      queryKey: getListInvoicesQueryKey(activeInvoiceQuery),
+      enabled: !!expandedSubscriptionId,
     },
   });
 
@@ -170,6 +181,21 @@ export default function Subscriptions() {
         return <Badge variant="secondary">Cancelada</Badge>;
       case "overdue":
         return <Badge variant="destructive">Atrasada</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const invoiceBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge variant="secondary">Pendente</Badge>;
+      case "paid":
+        return <Badge variant="default">Paga</Badge>;
+      case "overdue":
+        return <Badge variant="destructive">Atrasada</Badge>;
+      case "cancelled":
+        return <Badge variant="outline">Cancelada</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -232,8 +258,24 @@ export default function Subscriptions() {
                 </TableHeader>
                 <TableBody>
                   {subscriptions.map((sub) => (
+                    <>
                     <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
-                      <TableCell className="font-medium">{sub.customerName || "-"}</TableCell>
+                      <TableCell className="font-medium">
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 text-left"
+                          onClick={() =>
+                            setExpandedSubscriptionId(expandedSubscriptionId === sub.id ? null : sub.id)
+                          }
+                        >
+                          {expandedSubscriptionId === sub.id ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                          {sub.customerName || "-"}
+                        </button>
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           {sub.serviceName && (
@@ -262,6 +304,47 @@ export default function Subscriptions() {
                         </div>
                       </TableCell>
                     </TableRow>
+                    {expandedSubscriptionId === sub.id && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="bg-muted/30">
+                          <div className="space-y-3 py-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-medium">Faturas desta assinatura</p>
+                              <p className="text-xs text-muted-foreground">
+                                {isLoadingInvoices ? "Carregando..." : `${subscriptionInvoices?.length || 0} faturas`}
+                              </p>
+                            </div>
+                            {!subscriptionInvoices?.length ? (
+                              <p className="text-sm text-muted-foreground">Nenhuma fatura encontrada.</p>
+                            ) : (
+                              <div className="overflow-x-auto rounded-md border bg-background">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Vencimento</TableHead>
+                                      <TableHead>Valor</TableHead>
+                                      <TableHead>Status</TableHead>
+                                      <TableHead>Pagamento</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {subscriptionInvoices.map((invoice) => (
+                                      <TableRow key={invoice.id}>
+                                        <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                                        <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                                        <TableCell>{invoiceBadge(invoice.status)}</TableCell>
+                                        <TableCell>{invoice.paidAt ? formatDate(invoice.paidAt) : "-"}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </>
                   ))}
                 </TableBody>
               </Table>

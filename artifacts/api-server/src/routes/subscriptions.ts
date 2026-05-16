@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, subscriptionsTable, customersTable, servicesTable } from "@workspace/db";
+import { db, subscriptionsTable, customersTable, servicesTable, invoicesTable } from "@workspace/db";
 import {
   ListSubscriptionsQueryParams,
   ListSubscriptionsResponse,
@@ -11,6 +11,7 @@ import {
   UpdateSubscriptionBody,
   UpdateSubscriptionResponse,
   DeleteSubscriptionParams,
+  ListInvoicesResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -142,6 +143,43 @@ router.get("/subscriptions/:id", async (req, res): Promise<void> => {
     serviceId: result.serviceId ?? null,
     serviceName: result.serviceName ?? null,
   }));
+});
+
+router.get("/subscriptions/:id/invoices", async (req, res): Promise<void> => {
+  const params = GetSubscriptionParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const results = await db
+    .select({
+      id: invoicesTable.id,
+      subscriptionId: invoicesTable.subscriptionId,
+      customerId: invoicesTable.customerId,
+      customerName: customersTable.name,
+      amount: invoicesTable.amount,
+      status: invoicesTable.status,
+      dueDate: invoicesTable.dueDate,
+      paidAt: invoicesTable.paidAt,
+      pixCode: invoicesTable.pixCode,
+      pixQrCode: invoicesTable.pixQrCode,
+      externalId: invoicesTable.externalId,
+      createdAt: invoicesTable.createdAt,
+      updatedAt: invoicesTable.updatedAt,
+    })
+    .from(invoicesTable)
+    .leftJoin(customersTable, eq(invoicesTable.customerId, customersTable.id))
+    .where(eq(invoicesTable.subscriptionId, params.data.id))
+    .orderBy(invoicesTable.dueDate);
+
+  const mapped = results.map((r) => ({
+    ...r,
+    amount: Number(r.amount),
+    customerName: r.customerName || "Unknown",
+  }));
+
+  res.json(ListInvoicesResponse.parse(mapped));
 });
 
 router.patch("/subscriptions/:id", async (req, res): Promise<void> => {
