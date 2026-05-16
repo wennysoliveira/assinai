@@ -42,7 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Plus, Pencil, Trash2, CreditCard, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, ChevronDown, ChevronRight, Receipt } from "lucide-react";
 
 interface SubscriptionForm {
   customerId: number;
@@ -127,6 +127,8 @@ export default function Subscriptions() {
       enabled: !!expandedSubscriptionId,
     },
   });
+
+  const selectedSubscription = subscriptions?.find((sub) => sub.id === expandedSubscriptionId) ?? null;
 
   const handleSubmit = () => {
     if (!form.plan || !form.customerId || form.amount <= 0) {
@@ -258,29 +260,20 @@ export default function Subscriptions() {
                 </TableHeader>
                 <TableBody>
                   {subscriptions.map((sub) => (
-                    <>
                     <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
                       <TableCell className="font-medium">
                         <button
                           type="button"
                           className="flex items-center gap-2 text-left"
-                          onClick={() =>
-                            setExpandedSubscriptionId(expandedSubscriptionId === sub.id ? null : sub.id)
-                          }
+                          onClick={() => setExpandedSubscriptionId(expandedSubscriptionId === sub.id ? null : sub.id)}
                         >
-                          {expandedSubscriptionId === sub.id ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
+                          {expandedSubscriptionId === sub.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                           {sub.customerName || "-"}
                         </button>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          {sub.serviceName && (
-                            <span className="text-xs text-muted-foreground">{sub.serviceName}</span>
-                          )}
+                          {sub.serviceName && <span className="text-xs text-muted-foreground">{sub.serviceName}</span>}
                           <span className="font-medium text-sm">{sub.plan}</span>
                         </div>
                       </TableCell>
@@ -290,6 +283,15 @@ export default function Subscriptions() {
                       <TableCell>{formatDate(sub.nextBillingDate)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setExpandedSubscriptionId(expandedSubscriptionId === sub.id ? null : sub.id)}
+                            title="Ver faturas"
+                            data-testid={`button-view-invoices-${sub.id}`}
+                          >
+                            <Receipt className="w-4 h-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(sub)} data-testid={`button-edit-subscription-${sub.id}`}>
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -304,47 +306,6 @@ export default function Subscriptions() {
                         </div>
                       </TableCell>
                     </TableRow>
-                    {expandedSubscriptionId === sub.id && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="bg-muted/30">
-                          <div className="space-y-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium">Faturas desta assinatura</p>
-                              <p className="text-xs text-muted-foreground">
-                                {isLoadingInvoices ? "Carregando..." : `${subscriptionInvoices?.length || 0} faturas`}
-                              </p>
-                            </div>
-                            {!subscriptionInvoices?.length ? (
-                              <p className="text-sm text-muted-foreground">Nenhuma fatura encontrada.</p>
-                            ) : (
-                              <div className="overflow-x-auto rounded-md border bg-background">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Vencimento</TableHead>
-                                      <TableHead>Valor</TableHead>
-                                      <TableHead>Status</TableHead>
-                                      <TableHead>Pagamento</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {subscriptionInvoices.map((invoice) => (
-                                      <TableRow key={invoice.id}>
-                                        <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                                        <TableCell>{formatCurrency(invoice.amount)}</TableCell>
-                                        <TableCell>{invoiceBadge(invoice.status)}</TableCell>
-                                        <TableCell>{invoice.paidAt ? formatDate(invoice.paidAt) : "-"}</TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    </>
                   ))}
                 </TableBody>
               </Table>
