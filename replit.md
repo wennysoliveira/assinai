@@ -67,8 +67,10 @@ SaaS for managing recurring subscriptions with PIX payment integration (QQPag) a
 
 ### Environment Variables
 - `DATABASE_URL` — PostgreSQL connection string
-- `QQPAG_BASE_URL` — QQPag API base URL
-- `QQPAG_TOKEN` — QQPag authentication token
+- `QQPAG_BASE_URL` — QQPag API base URL (sandbox: https://sandbox.qqpag.com.br)
+- `QQPAG_CLIENT_ID` — QQPag OAuth2 client_id
+- `QQPAG_CLIENT_SECRET` — QQPag OAuth2 client_secret
+- `QQPAG_CHAVE_PIX` — Chave Pix cadastrada na QQPag
 - `UAZAPI_BASE_URL` — Uazapi API base URL
 - `UAZAPI_TOKEN` — Uazapi authentication token
 - `SESSION_SECRET` — Session secret

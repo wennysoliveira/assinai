@@ -11,7 +11,7 @@ import {
   SendPaymentReminderParams,
   SendPaymentReminderResponse,
 } from "@workspace/api-zod";
-import { generatePixCharge } from "../services/qqpag";
+import { generatePixCharge, generateTxId } from "../services/qqpag";
 import { sendPaymentReminder } from "../services/uazapi";
 
 const router: IRouter = Router();
@@ -126,10 +126,10 @@ router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
     return;
   }
 
-  const externalId = `INV-${invoice.id}-${Date.now()}`;
+  const txId = generateTxId(invoice.id);
 
   const pixResult = await generatePixCharge({
-    externalId,
+    txId,
     amount: Number(invoice.amount),
     description: `Fatura #${invoice.id}`,
     cpfCnpj: customer.cpfCnpj,
@@ -141,7 +141,7 @@ router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
     .set({
       pixCode: pixResult.pixCopiaECola,
       pixQrCode: pixResult.qrCode,
-      externalId: pixResult.externalId,
+      externalId: pixResult.txId,
     })
     .where(eq(invoicesTable.id, invoice.id));
 
@@ -149,7 +149,7 @@ router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
     invoiceId: invoice.id,
     qrCode: pixResult.qrCode,
     pixCopiaECola: pixResult.pixCopiaECola,
-    externalId: pixResult.externalId,
+    externalId: pixResult.txId,
   }));
 });
 
