@@ -42,7 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Plus, Pencil, Trash2, CreditCard, ChevronDown, ChevronRight, Receipt } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard } from "lucide-react";
 
 interface SubscriptionForm {
   customerId: number;
@@ -127,8 +127,6 @@ export default function Subscriptions() {
       enabled: !!expandedSubscriptionId,
     },
   });
-
-  const selectedSubscription = subscriptions?.find((sub) => sub.id === expandedSubscriptionId) ?? null;
 
   const handleSubmit = () => {
     if (!form.plan || !form.customerId || form.amount <= 0) {
@@ -261,16 +259,7 @@ export default function Subscriptions() {
                 <TableBody>
                   {subscriptions.map((sub) => (
                     <TableRow key={sub.id} data-testid={`row-subscription-${sub.id}`}>
-                      <TableCell className="font-medium">
-                        <button
-                          type="button"
-                          className="flex items-center gap-2 text-left"
-                          onClick={() => setExpandedSubscriptionId(expandedSubscriptionId === sub.id ? null : sub.id)}
-                        >
-                          {expandedSubscriptionId === sub.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                          {sub.customerName || "-"}
-                        </button>
-                      </TableCell>
+                      <TableCell className="font-medium">{sub.customerName || "-"}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           {sub.serviceName && <span className="text-xs text-muted-foreground">{sub.serviceName}</span>}
@@ -284,13 +273,12 @@ export default function Subscriptions() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="outline"
+                            size="sm"
                             onClick={() => setExpandedSubscriptionId(expandedSubscriptionId === sub.id ? null : sub.id)}
-                            title="Ver faturas"
                             data-testid={`button-view-invoices-${sub.id}`}
                           >
-                            <Receipt className="w-4 h-4" />
+                            Faturas
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(sub)} data-testid={`button-edit-subscription-${sub.id}`}>
                             <Pencil className="w-4 h-4" />
