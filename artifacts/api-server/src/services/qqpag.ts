@@ -1,11 +1,48 @@
 import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
 
-const BASE_URL = (process.env.QQPAG_BASE_URL || "https://sandbox.qqpag.com.br").replace(/\/$/, "");
+const BASE_URL = sanitizeBaseUrl(process.env.QQPAG_BASE_URL || "https://sandbox.qqpag.com.br");
 const CLIENT_ID = process.env.QQPAG_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.QQPAG_CLIENT_SECRET || "";
 const CHAVE_PIX = process.env.QQPAG_CHAVE_PIX || "";
 const SCOPES = "cob.write cob.read cobv.write cobv.read pix.write pix.read webhook.read webhook.write";
+
+function sanitizeBaseUrl(value: string): string {
+  const normalized = value.replace(/\/$/, "");
+  try {
+    const parsed = new URL(normalized);
+    if (!parsed.protocol.startsWith("http")) {
+      throw new Error("invalid protocol");
+    }
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    throw new Error(`QQPAG_BASE_URL inválida: "${value}"`);
+  }
+}
+
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const cause = error.cause instanceof Error ? ` | cause: ${causeToString(error.cause)}` : "";
+    return `${error.message}${cause}`;
+  }
+  return String(error);
+}
+
+function causeToString(cause: Error): string {
+  const anyCause = cause as Error & { code?: string };
+  return anyCause.code ? `${cause.message} (${anyCause.code})` : cause.message;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 interface TokenCache {
   token: string;
@@ -21,7 +58,9 @@ async function getAccessToken(): Promise<string> {
 
   logger.info("Requesting new QQPag OAuth2 token");
 
-  const response = await fetch(`${BASE_URL}/api/oauth/token`, {
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`${BASE_URL}/api/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -30,7 +69,11 @@ async function getAccessToken(): Promise<string> {
       grant_type: "client_credentials",
       scope: SCOPES,
     }),
-  });
+    });
+  } catch (error) {
+    logger.error({ err: error, baseUrl: BASE_URL }, "QQPag OAuth2 token request network failure");
+    throw new Error(`Falha de conexão com QQPag ao obter token: ${getErrorMessage(error)}`);
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -58,14 +101,20 @@ async function apiRequest(
 ): Promise<Response> {
   const token = await getAccessToken();
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(`${BASE_URL}${path}`, {
     method,
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+    });
+  } catch (error) {
+    logger.error({ err: error, method, path, baseUrl: BASE_URL }, "QQPag request network failure");
+    throw new Error(`Falha de conexão com QQPag em ${method} ${path}: ${getErrorMessage(error)}`);
+  }
 
   if (res.status === 401 && retryOnUnauth) {
     logger.warn("QQPag 401 — invalidating token cache and retrying");
