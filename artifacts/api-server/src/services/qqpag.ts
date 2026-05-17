@@ -139,18 +139,39 @@ export async function generatePixCharge(data: PixChargeRequest): Promise<PixChar
 
   if (qrcodeRes.ok) {
     const qrData = await qrcodeRes.json() as Record<string, unknown>;
-    const imagemQrcode = qrData.imagemQrcode ?? qrData.qrcode ?? qrData.image ?? qrData.qrCode;
-    const copiaECola = qrData.pixCopiaECola ?? qrData.payload ?? qrData.emv ?? qrData.copyPaste ?? qrData.qrcode;
-    if (typeof imagemQrcode === "string") {
-      qrCode = imagemQrcode.startsWith("data:") ? imagemQrcode : imagemQrcode;
-    } else if (typeof qrData.imagemQrcode === "object" && qrData.imagemQrcode && "base64" in (qrData.imagemQrcode as Record<string, unknown>)) {
-      const base64 = String((qrData.imagemQrcode as Record<string, unknown>).base64 ?? "");
-      qrCode = base64 ? `data:image/png;base64,${base64}` : "";
+    logger.info({ txId: data.txId, qrDataKeys: Object.keys(qrData) }, "QQPag QRCode raw response keys");
+
+    const rawQr =
+      qrData.qrInBase64 ??
+      qrData.imagemQrcode ??
+      qrData.qrcode ??
+      qrData.image ??
+      qrData.qrCode;
+
+    const rawCopiaECola =
+      qrData.pixCopiaCola ??
+      qrData.pixCopiaECola ??
+      qrData.payload ??
+      qrData.emv ??
+      qrData.copyPaste;
+
+    if (typeof rawQr === "string" && rawQr.length > 0) {
+      if (rawQr.startsWith("data:") || rawQr.startsWith("http")) {
+        qrCode = rawQr;
+      } else {
+        qrCode = `data:image/png;base64,${rawQr}`;
+      }
+    } else if (typeof rawQr === "object" && rawQr !== null) {
+      const obj = rawQr as Record<string, unknown>;
+      const b64 = String(obj.base64 ?? obj.content ?? "");
+      if (b64) qrCode = `data:image/png;base64,${b64}`;
     }
-    if (typeof copiaECola === "string") {
-      pixCopiaECola = copiaECola;
+
+    if (typeof rawCopiaECola === "string" && rawCopiaECola.length > 0) {
+      pixCopiaECola = rawCopiaECola;
     }
-    logger.info({ txId: data.txId }, "QRCode obtained from QQPag");
+
+    logger.info({ txId: data.txId, hasQrCode: qrCode.length > 0, hasCopiaECola: pixCopiaECola.length > 0 }, "QRCode obtained from QQPag");
   } else {
     const errText = await qrcodeRes.text();
     logger.warn({ status: qrcodeRes.status, body: errText, txId: data.txId }, "QQPag QRCode fetch failed");
