@@ -42,7 +42,13 @@ export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [subscriptionIdFilter, setSubscriptionIdFilter] = useState<string>("");
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
-  const [pixData, setPixData] = useState<{ qrCode: string; pixCopiaECola: string } | null>(null);
+  const [pixData, setPixData] = useState<{
+    invoiceId: number;
+    amount: number;
+    qrCode: string;
+    pixCopiaECola: string;
+    externalId?: string | null;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -63,7 +69,14 @@ export default function Invoices() {
   const generatePix = useGeneratePixCharge({
     mutation: {
       onSuccess: (data) => {
-        setPixData({ qrCode: data.qrCode, pixCopiaECola: data.pixCopiaECola });
+        const invoice = invoices?.find((item) => item.id === data.invoiceId);
+        setPixData({
+          invoiceId: data.invoiceId,
+          amount: invoice?.amount ?? 0,
+          qrCode: data.qrCode,
+          pixCopiaECola: data.pixCopiaECola,
+          externalId: data.externalId,
+        });
         setPixDialogOpen(true);
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
         toast({ title: "Cobrança PIX gerada com sucesso" });
@@ -202,7 +215,13 @@ export default function Invoices() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              setPixData({ qrCode: invoice.pixQrCode || "", pixCopiaECola: invoice.pixCode || "" });
+                              setPixData({
+                                invoiceId: invoice.id,
+                                amount: invoice.amount,
+                                qrCode: invoice.pixQrCode || "",
+                                pixCopiaECola: invoice.pixCode || "",
+                                externalId: invoice.externalId || null,
+                              });
                               setPixDialogOpen(true);
                             }}
                             title="Ver PIX"
@@ -222,39 +241,59 @@ export default function Invoices() {
       </Card>
 
       <Dialog open={pixDialogOpen} onOpenChange={setPixDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Cobrança PIX</DialogTitle>
+            <DialogTitle>Cobrança PIX #{pixData?.invoiceId ?? ""}</DialogTitle>
             <DialogDescription>
               Escaneie o QR Code ou copie o código PIX para efetuar o pagamento.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            {pixData?.qrCode && (
-              <div className="flex justify-center">
-                <div className="p-4 bg-white rounded-lg border">
-                  <img src={pixData.qrCode} alt="QR Code PIX" className="w-48 h-48" />
+          <div className="grid gap-6 py-4 lg:grid-cols-[280px_1fr]">
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="text-xs uppercase text-muted-foreground">Valor</div>
+                <div className="text-2xl font-semibold">{formatCurrency(pixData?.amount ?? 0)}</div>
+              </div>
+              <div className="rounded-lg border bg-white p-4">
+                {pixData?.qrCode ? (
+                  <img src={pixData.qrCode} alt="QR Code PIX" className="w-full max-w-[240px] mx-auto" />
+                ) : (
+                  <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
+                    QR Code indisponível
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border p-4">
+                  <div className="text-xs uppercase text-muted-foreground">Fatura</div>
+                  <div className="font-medium">#{pixData?.invoiceId ?? "-"}</div>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <div className="text-xs uppercase text-muted-foreground">ID externo</div>
+                  <div className="font-mono text-sm break-all">{pixData?.externalId || "-"}</div>
                 </div>
               </div>
-            )}
-            {pixData?.pixCopiaECola && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Copia e Cola:</p>
+                <p className="text-sm font-medium text-muted-foreground">PIX copia e cola</p>
                 <div className="flex gap-2">
-                  <code className="flex-1 p-3 bg-muted rounded-md text-xs break-all font-mono">
-                    {pixData.pixCopiaECola}
+                  <code className="flex-1 rounded-md border bg-muted p-3 text-xs break-all font-mono">
+                    {pixData?.pixCopiaECola || "Código PIX indisponível"}
                   </code>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleCopyPix(pixData.pixCopiaECola)}
-                    data-testid="button-copy-pix"
-                  >
-                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  </Button>
+                  {pixData?.pixCopiaECola && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleCopyPix(pixData.pixCopiaECola)}
+                      data-testid="button-copy-pix"
+                    >
+                      {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
