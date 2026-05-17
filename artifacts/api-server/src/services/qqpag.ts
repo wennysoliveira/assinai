@@ -44,6 +44,37 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 1500
   }
 }
 
+
+const RETRYABLE_NETWORK_CODES = new Set([
+  "UND_ERR_SOCKET",
+  "ECONNRESET",
+  "EPIPE",
+  "ETIMEDOUT",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT",
+]);
+
+function getErrorCode(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const direct = (error as Error & { code?: string }).code;
+  if (direct) return direct;
+  const cause = (error as Error & { cause?: unknown }).cause;
+  if (cause && typeof cause === "object") {
+    return (cause as { code?: string }).code;
+  }
+  return undefined;
+}
+
+function shouldRetryNetworkError(error: unknown): boolean {
+  const code = getErrorCode(error);
+  return code ? RETRYABLE_NETWORK_CODES.has(code) : false;
+}
+
+async function delay(ms: number): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
+
 interface TokenCache {
   token: string;
   expiresAt: number;
@@ -51,7 +82,7 @@ interface TokenCache {
 
 let tokenCache: TokenCache | null = null;
 
-async function getAccessToken(): Promise<string> {
+async function getAccessToken(retryCount = 1): Promise<string> {
   if (tokenCache && Date.now() < tokenCache.expiresAt - 30_000) {
     return tokenCache.token;
   }
@@ -72,6 +103,11 @@ async function getAccessToken(): Promise<string> {
     });
   } catch (error) {
     logger.error({ err: error, baseUrl: BASE_URL }, "QQPag OAuth2 token request network failure");
+    if (retryCount > 0 && shouldRetryNetworkError(error)) {
+      logger.warn({ code: getErrorCode(error), retriesLeft: retryCount }, "Retrying QQPag OAuth2 token request after network error");
+      await delay(300);
+      return getAccessToken(retryCount - 1);
+    }
     throw new Error(`Falha de conexão com QQPag ao obter token: ${getErrorMessage(error)}`);
   }
 
@@ -98,6 +134,7 @@ async function apiRequest(
   path: string,
   body?: unknown,
   retryOnUnauth = true,
+  retryCount = 1,
 ): Promise<Response> {
   const token = await getAccessToken();
 
@@ -113,6 +150,11 @@ async function apiRequest(
     });
   } catch (error) {
     logger.error({ err: error, method, path, baseUrl: BASE_URL }, "QQPag request network failure");
+    if (retryCount > 0 && shouldRetryNetworkError(error)) {
+      logger.warn({ code: getErrorCode(error), method, path, retriesLeft: retryCount }, "Retrying QQPag request after network error");
+      await delay(300);
+      return apiRequest(method, path, body, retryOnUnauth, retryCount - 1);
+    }
     throw new Error(`Falha de conexão com QQPag em ${method} ${path}: ${getErrorMessage(error)}`);
   }
 
