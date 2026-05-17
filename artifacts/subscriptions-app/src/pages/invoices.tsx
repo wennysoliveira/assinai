@@ -52,6 +52,7 @@ export default function Invoices() {
     dueDate?: string;
     status?: string;
   } | null>(null);
+  const [showQrFallback, setShowQrFallback] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -83,6 +84,7 @@ export default function Invoices() {
           dueDate: invoice?.dueDate,
           status: invoice?.status,
         });
+        setShowQrFallback(false);
         setPixDialogOpen(true);
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
         toast({ title: "Cobrança PIX gerada com sucesso" });
@@ -231,6 +233,7 @@ export default function Invoices() {
                                 dueDate: invoice.dueDate,
                                 status: invoice.status,
                               });
+                              setShowQrFallback(false);
                               setPixDialogOpen(true);
                             }}
                             title="Ver PIX"
@@ -264,17 +267,22 @@ export default function Invoices() {
                 <div className="text-2xl font-semibold">{formatCurrency(pixData?.amount ?? 0)}</div>
               </div>
               <div className="rounded-lg border bg-white p-4">
-                <img
-                  src={pixData?.qrCode || ""}
-                  alt="QR Code PIX"
-                  className="w-full max-w-[240px] mx-auto"
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
-                />
-                {!pixData?.qrCode && (
-                  <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
-                    QR Code indisponível
+                {pixData?.qrCode && !showQrFallback ? (
+                  <img
+                    src={pixData.qrCode}
+                    alt="QR Code PIX"
+                    className="w-full max-w-[240px] mx-auto"
+                    onError={() => setShowQrFallback(true)}
+                  />
+                ) : (
+                  <div className="flex h-[240px] flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
+                    <QrCode className="w-10 h-10 opacity-40" />
+                    <span>QR Code indisponível</span>
+                    {pixData?.pixCopiaECola && (
+                      <span className="max-w-[220px] text-xs break-all text-foreground/80">
+                        Você ainda pode pagar usando o PIX copia e cola abaixo.
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -318,6 +326,11 @@ export default function Invoices() {
                     {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                   </Button>
                 </div>
+                {!pixData?.pixCopiaECola && (
+                  <p className="text-xs text-muted-foreground">
+                    Não foi possível carregar o código PIX nesta cobrança.
+                  </p>
+                )}
               </div>
             </div>
           </div>
