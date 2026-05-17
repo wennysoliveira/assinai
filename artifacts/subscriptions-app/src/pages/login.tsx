@@ -38,7 +38,10 @@ export default function Login() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await login({ email, password });
+      const auth = await login({ email, password });
+      if (!auth) {
+        throw new Error("Falha ao autenticar");
+      }
       setLocation("/dashboard");
     } catch {
       // error shown via loginError
