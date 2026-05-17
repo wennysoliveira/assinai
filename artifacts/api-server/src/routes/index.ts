@@ -15,6 +15,7 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(webhooksRouter);
 
 router.use(requireAuth);
 
@@ -24,7 +25,6 @@ router.use(subscriptionsRouter);
 router.use(invoicesRouter);
 router.use(dashboardRouter);
 router.use(billingRouter);
-router.use(webhooksRouter);
 router.use(whatsappRouter);
 
 export default router;
