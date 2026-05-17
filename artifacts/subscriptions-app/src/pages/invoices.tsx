@@ -39,6 +39,7 @@ import { Label } from "@/components/ui/label";
 import { QrCode, MessageSquare, Receipt, Copy, Check, Pencil } from "lucide-react";
 
 export default function Invoices() {
+  const apiBase = `${import.meta.env.BASE_URL}api`;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -163,26 +164,29 @@ export default function Invoices() {
       return;
     }
 
-    queryClient.setQueriesData({ queryKey: getListInvoicesQueryKey() }, (oldData: unknown) => {
-      if (!Array.isArray(oldData)) return oldData;
-      return oldData.map((invoice) =>
-        invoice && typeof invoice === "object" && "id" in invoice && (invoice as { id: number }).id === editForm.id
-          ? {
-              ...invoice,
-              amount: amountValue,
-              dueDate: editForm.dueDate,
-              status: editForm.status,
-            }
-          : invoice
-      );
-    });
+    void (async () => {
+      const res = await fetch(`${apiBase}/invoices/${editForm.id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: amountValue,
+          dueDate: editForm.dueDate,
+          status: editForm.status,
+        }),
+      });
 
-    setEditDialogOpen(false);
-    setEditForm(null);
-    toast({
-      title: "Fatura atualizada",
-      description: "Alterações aplicadas na listagem atual.",
-    });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Erro ao salvar fatura" }));
+        toast({ variant: "destructive", title: data.error || "Erro ao salvar fatura" });
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey(params) });
+      setEditDialogOpen(false);
+      setEditForm(null);
+      toast({ title: "Fatura atualizada com sucesso" });
+    })();
   };
 
   return (

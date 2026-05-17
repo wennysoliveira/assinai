@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, invoicesTable, customersTable, subscriptionsTable } from "@workspace/db";
 import {
   ListInvoicesQueryParams,
@@ -15,6 +16,12 @@ import { generatePixCharge, generateTxId } from "../services/qqpag";
 import { sendPaymentReminder } from "../services/uazapi";
 
 const router: IRouter = Router();
+const updateInvoiceParamsSchema = z.object({ id: z.coerce.number().int().positive() });
+const updateInvoiceBodySchema = z.object({
+  amount: z.number().positive().optional(),
+  dueDate: z.coerce.date().optional(),
+  status: z.enum(["pending", "paid", "overdue", "cancelled"]).optional(),
+});
 
 router.get("/invoices", async (req, res): Promise<void> => {
   const query = ListInvoicesQueryParams.safeParse(req.query);
@@ -96,6 +103,42 @@ router.get("/invoices/:id", async (req, res): Promise<void> => {
     ...result,
     amount: Number(result.amount),
     customerName: result.customerName || "Unknown",
+  }));
+});
+
+router.patch("/invoices/:id", async (req, res): Promise<void> => {
+  const params = updateInvoiceParamsSchema.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const body = updateInvoiceBodySchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+
+  const [invoice] = await db
+    .update(invoicesTable)
+    .set(body.data)
+    .where(eq(invoicesTable.id, params.data.id))
+    .returning();
+
+  if (!invoice) {
+    res.status(404).json({ error: "Invoice not found" });
+    return;
+  }
+
+  const [customer] = await db
+    .select({ name: customersTable.name })
+    .from(customersTable)
+    .where(eq(customersTable.id, invoice.customerId));
+
+  res.json(GetInvoiceResponse.parse({
+    ...invoice,
+    amount: Number(invoice.amount),
+    customerName: customer?.name || "Unknown",
   }));
 });
 
