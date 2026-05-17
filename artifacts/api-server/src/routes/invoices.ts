@@ -126,6 +126,16 @@ router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
     return;
   }
 
+  if (invoice.status === "paid") {
+    res.status(400).json({ error: "Esta fatura já foi paga." });
+    return;
+  }
+
+  if (invoice.status === "cancelled") {
+    res.status(400).json({ error: "Esta fatura está cancelada e não pode gerar cobrança." });
+    return;
+  }
+
   const txId = generateTxId(invoice.id);
 
   const pixResult = await generatePixCharge({

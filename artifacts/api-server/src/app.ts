@@ -61,16 +61,13 @@ async function ensureSessionTable() {
   }
 }
 
-let sessionStore: InstanceType<typeof PgSession> | undefined;
-if (process.env.NODE_ENV === "production") {
-  void ensureSessionTable();
-  sessionStore = new PgSession({
-    pool,
-    errorLog: (...args: unknown[]) => {
-      logger.error({ args }, "connect-pg-simple session store error");
-    },
-  });
-}
+void ensureSessionTable();
+const sessionStore = new PgSession({
+  pool,
+  errorLog: (...args: unknown[]) => {
+    logger.error({ args }, "connect-pg-simple session store error");
+  },
+});
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -82,7 +79,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax",
       secure: isProduction,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },

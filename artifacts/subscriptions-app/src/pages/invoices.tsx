@@ -89,7 +89,12 @@ export default function Invoices() {
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
         toast({ title: "Cobrança PIX gerada com sucesso" });
       },
-      onError: () => toast({ variant: "destructive", title: "Erro ao gerar cobrança PIX" }),
+      onError: (err: unknown) => {
+        const message =
+          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          "Erro ao gerar cobrança PIX";
+        toast({ variant: "destructive", title: message });
+      },
     },
   });
 
