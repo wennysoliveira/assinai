@@ -73,11 +73,13 @@ export default function Invoices() {
     mutation: {
       onSuccess: (data) => {
         const invoice = invoices?.find((item) => item.id === data.invoiceId);
+        const qrCode = data.qrCode || invoice?.pixQrCode || "";
+        const pixCopiaECola = data.pixCopiaECola || invoice?.pixCode || "";
         setPixData({
           invoiceId: data.invoiceId,
           amount: invoice?.amount ?? 0,
-          qrCode: data.qrCode,
-          pixCopiaECola: data.pixCopiaECola,
+          qrCode,
+          pixCopiaECola,
           externalId: data.externalId,
           customerName: invoice?.customerName,
           dueDate: invoice?.dueDate,
@@ -221,11 +223,13 @@ export default function Invoices() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
+                              const qrCode = invoice.pixQrCode || "";
+                              const pixCopiaECola = invoice.pixCode || "";
                               setPixData({
                                 invoiceId: invoice.id,
                                 amount: invoice.amount,
-                                qrCode: invoice.pixQrCode || "",
-                                pixCopiaECola: invoice.pixCode || "",
+                                qrCode,
+                                pixCopiaECola,
                                 externalId: invoice.externalId || null,
                                 customerName: invoice.customerName,
                                 dueDate: invoice.dueDate,
@@ -270,6 +274,14 @@ export default function Invoices() {
                     alt="QR Code PIX"
                     className="w-full max-w-[240px] mx-auto"
                   />
+                ) : pixData?.pixCopiaECola ? (
+                  <div className="flex h-[240px] flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
+                    <QrCode className="w-10 h-10 opacity-40" />
+                    <span>QR Code não retornou da QQPag</span>
+                    <span className="max-w-[220px] text-xs break-all text-foreground/80">
+                      Use o PIX copia e cola abaixo para pagar.
+                    </span>
+                  </div>
                 ) : (
                   <div className="flex h-[240px] flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
                     <QrCode className="w-10 h-10 opacity-40" />
