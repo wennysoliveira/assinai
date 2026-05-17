@@ -107,22 +107,51 @@ router.get("/invoices/:id", async (req, res): Promise<void> => {
 });
 
 router.patch("/invoices/:id", async (req, res): Promise<void> => {
-  const params = updateInvoiceParamsSchema.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid invoice id" });
     return;
   }
 
-  const body = updateInvoiceBodySchema.safeParse(req.body);
-  if (!body.success) {
-    res.status(400).json({ error: body.error.message });
+  const body = req.body as { amount?: unknown; dueDate?: unknown; status?: unknown };
+  const updates: { amount?: number; dueDate?: Date; status?: "pending" | "paid" | "overdue" | "cancelled" } = {};
+
+  if (body.amount !== undefined) {
+    const amount = Number(body.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      res.status(400).json({ error: "Invalid amount" });
+      return;
+    }
+    updates.amount = amount;
+  }
+
+  if (body.dueDate !== undefined) {
+    const dueDate = new Date(String(body.dueDate));
+    if (Number.isNaN(dueDate.getTime())) {
+      res.status(400).json({ error: "Invalid dueDate" });
+      return;
+    }
+    updates.dueDate = dueDate;
+  }
+
+  if (body.status !== undefined) {
+    const validStatus = ["pending", "paid", "overdue", "cancelled"] as const;
+    if (!validStatus.includes(body.status as (typeof validStatus)[number])) {
+      res.status(400).json({ error: "Invalid status" });
+      return;
+    }
+    updates.status = body.status as (typeof validStatus)[number];
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "No fields to update" });
     return;
   }
 
   const [invoice] = await db
     .update(invoicesTable)
-    .set(body.data)
-    .where(eq(invoicesTable.id, params.data.id))
+    .set(updates)
+    .where(eq(invoicesTable.id, id))
     .returning();
 
   if (!invoice) {
