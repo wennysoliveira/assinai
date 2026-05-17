@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, invoicesTable, customersTable, subscriptionsTable } from "@workspace/db";
 import {
   ListInvoicesQueryParams,
@@ -15,6 +16,12 @@ import { generatePixCharge, generateTxId } from "../services/qqpag";
 import { sendPaymentReminder } from "../services/uazapi";
 
 const router: IRouter = Router();
+const updateInvoiceParamsSchema = z.object({ id: z.coerce.number().int().positive() });
+const updateInvoiceBodySchema = z.object({
+  amount: z.number().positive().optional(),
+  dueDate: z.coerce.date().optional(),
+  status: z.enum(["pending", "paid", "overdue", "cancelled"]).optional(),
+});
 
 router.get("/invoices", async (req, res): Promise<void> => {
   const query = ListInvoicesQueryParams.safeParse(req.query);
