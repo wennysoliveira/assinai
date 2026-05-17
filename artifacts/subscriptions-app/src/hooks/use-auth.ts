@@ -4,15 +4,17 @@ interface AuthUser {
   email: string;
 }
 
+const apiBase = `${import.meta.env.BASE_URL}api`;
+
 async function fetchMe(): Promise<AuthUser | null> {
-  const res = await fetch("/api/auth/me", { credentials: "include" });
+  const res = await fetch(`${apiBase}/auth/me`, { credentials: "include" });
   if (res.status === 401) return null;
   if (!res.ok) throw new Error("Erro ao verificar autenticação");
   return res.json() as Promise<AuthUser>;
 }
 
 async function loginRequest(email: string, password: string): Promise<AuthUser> {
-  const res = await fetch("/api/auth/login", {
+  const res = await fetch(`${apiBase}/auth/login`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -26,7 +28,7 @@ async function loginRequest(email: string, password: string): Promise<AuthUser> 
 }
 
 async function logoutRequest(): Promise<void> {
-  await fetch("/api/auth/logout", {
+  await fetch(`${apiBase}/auth/logout`, {
     method: "POST",
     credentials: "include",
   });
