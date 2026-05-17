@@ -34,7 +34,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { QrCode, MessageSquare, Receipt, Copy, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { QrCode, MessageSquare, Receipt, Copy, Check, Pencil } from "lucide-react";
 
 export default function Invoices() {
   const { toast } = useToast();
@@ -53,6 +55,13 @@ export default function Invoices() {
     status?: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    id: number;
+    amount: string;
+    dueDate: string;
+    status: "pending" | "paid" | "overdue" | "cancelled";
+  } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -132,6 +141,50 @@ export default function Invoices() {
     }
   };
 
+
+
+  const openEditInvoice = (invoice: { id: number; amount: number; dueDate: string; status: "pending" | "paid" | "overdue" | "cancelled" }) => {
+    setEditForm({
+      id: invoice.id,
+      amount: String(invoice.amount),
+      dueDate: invoice.dueDate ? invoice.dueDate.slice(0, 10) : "",
+      status: invoice.status,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveInvoice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm) return;
+
+    const amountValue = Number(editForm.amount);
+    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+      toast({ variant: "destructive", title: "Informe um valor válido" });
+      return;
+    }
+
+    queryClient.setQueriesData({ queryKey: getListInvoicesQueryKey() }, (oldData: unknown) => {
+      if (!Array.isArray(oldData)) return oldData;
+      return oldData.map((invoice) =>
+        invoice && typeof invoice === "object" && "id" in invoice && (invoice as { id: number }).id === editForm.id
+          ? {
+              ...invoice,
+              amount: amountValue,
+              dueDate: editForm.dueDate,
+              status: editForm.status,
+            }
+          : invoice
+      );
+    });
+
+    setEditDialogOpen(false);
+    setEditForm(null);
+    toast({
+      title: "Fatura atualizada",
+      description: "Alterações aplicadas na listagem atual.",
+    });
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -199,54 +252,66 @@ export default function Invoices() {
                       <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                       <TableCell>{invoice.paidAt ? formatDate(invoice.paidAt) : "-"}</TableCell>
                       <TableCell className="text-right">
-                        {invoice.status === "pending" || invoice.status === "overdue" ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => generatePix.mutate({ id: invoice.id })}
-                              disabled={generatePix.isPending}
-                              title="Gerar PIX"
-                              data-testid={`button-generate-pix-${invoice.id}`}
-                            >
-                              <QrCode className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => sendReminder.mutate({ id: invoice.id })}
-                              disabled={sendReminder.isPending}
-                              title="Enviar lembrete WhatsApp"
-                              data-testid={`button-send-reminder-${invoice.id}`}
-                            >
-                              <MessageSquare className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : invoice.pixCode ? (
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
-                              const qrCode = invoice.pixQrCode || "";
-                              const pixCopiaECola = invoice.pixCode || "";
-                              setPixData({
-                                invoiceId: invoice.id,
-                                amount: invoice.amount,
-                                qrCode,
-                                pixCopiaECola,
-                                externalId: invoice.externalId || null,
-                                customerName: invoice.customerName,
-                                dueDate: invoice.dueDate,
-                                status: invoice.status,
-                              });
-                              setPixDialogOpen(true);
-                            }}
-                            title="Ver PIX"
-                            data-testid={`button-view-pix-${invoice.id}`}
+                            onClick={() => openEditInvoice(invoice)}
+                            title="Editar fatura"
+                            data-testid={`button-edit-invoice-${invoice.id}`}
                           >
-                            <QrCode className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" />
                           </Button>
-                        ) : null}
+                          {(invoice.status === "pending" || invoice.status === "overdue") && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => generatePix.mutate({ id: invoice.id })}
+                                disabled={generatePix.isPending}
+                                title="Gerar PIX"
+                                data-testid={`button-generate-pix-${invoice.id}`}
+                              >
+                                <QrCode className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => sendReminder.mutate({ id: invoice.id })}
+                                disabled={sendReminder.isPending}
+                                title="Enviar lembrete WhatsApp"
+                                data-testid={`button-send-reminder-${invoice.id}`}
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                          {(invoice.status !== "pending" && invoice.status !== "overdue" && invoice.pixCode) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const qrCode = invoice.pixQrCode || "";
+                                const pixCopiaECola = invoice.pixCode || "";
+                                setPixData({
+                                  invoiceId: invoice.id,
+                                  amount: invoice.amount,
+                                  qrCode,
+                                  pixCopiaECola,
+                                  externalId: invoice.externalId || null,
+                                  customerName: invoice.customerName,
+                                  dueDate: invoice.dueDate,
+                                  status: invoice.status,
+                                });
+                                setPixDialogOpen(true);
+                              }}
+                              title="Ver PIX"
+                              data-testid={`button-view-pix-${invoice.id}`}
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -348,6 +413,63 @@ export default function Invoices() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar fatura #{editForm?.id ?? ""}</DialogTitle>
+            <DialogDescription>Atualize os dados da fatura na listagem.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveInvoice} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="invoice-amount">Valor</Label>
+              <Input
+                id="invoice-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={editForm?.amount ?? ""}
+                onChange={(e) => setEditForm((prev) => (prev ? { ...prev, amount: e.target.value } : prev))}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="invoice-due-date">Vencimento</Label>
+              <Input
+                id="invoice-due-date"
+                type="date"
+                value={editForm?.dueDate ?? ""}
+                onChange={(e) => setEditForm((prev) => (prev ? { ...prev, dueDate: e.target.value } : prev))}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select
+                value={editForm?.status ?? "pending"}
+                onValueChange={(value: "pending" | "paid" | "overdue" | "cancelled") =>
+                  setEditForm((prev) => (prev ? { ...prev, status: value } : prev))
+                }
+              >
+                <SelectTrigger data-testid="select-edit-invoice-status">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="overdue">Atrasado</SelectItem>
+                  <SelectItem value="cancelled">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
+              <Button type="submit" data-testid="button-save-invoice-edit">Salvar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
