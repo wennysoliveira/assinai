@@ -20,6 +20,30 @@ function sanitizeBaseUrl(value: string): string {
   }
 }
 
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const cause = error.cause instanceof Error ? ` | cause: ${causeToString(error.cause)}` : "";
+    return `${error.message}${cause}`;
+  }
+  return String(error);
+}
+
+function causeToString(cause: Error): string {
+  const anyCause = cause as Error & { code?: string };
+  return anyCause.code ? `${cause.message} (${anyCause.code})` : cause.message;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 interface TokenCache {
   token: string;
   expiresAt: number;
@@ -36,7 +60,7 @@ async function getAccessToken(): Promise<string> {
 
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}/api/oauth/token`, {
+    response = await fetchWithTimeout(`${BASE_URL}/api/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -48,7 +72,7 @@ async function getAccessToken(): Promise<string> {
     });
   } catch (error) {
     logger.error({ err: error, baseUrl: BASE_URL }, "QQPag OAuth2 token request network failure");
-    throw new Error("Falha de conexão com QQPag ao obter token");
+    throw new Error(`Falha de conexão com QQPag ao obter token: ${getErrorMessage(error)}`);
   }
 
   if (!response.ok) {
@@ -79,7 +103,7 @@ async function apiRequest(
 
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}${path}`, {
+    res = await fetchWithTimeout(`${BASE_URL}${path}`, {
     method,
     headers: {
       "Authorization": `Bearer ${token}`,
@@ -89,7 +113,7 @@ async function apiRequest(
     });
   } catch (error) {
     logger.error({ err: error, method, path, baseUrl: BASE_URL }, "QQPag request network failure");
-    throw new Error(`Falha de conexão com QQPag em ${method} ${path}`);
+    throw new Error(`Falha de conexão com QQPag em ${method} ${path}: ${getErrorMessage(error)}`);
   }
 
   if (res.status === 401 && retryOnUnauth) {
