@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { z } from "zod";
 import { db, invoicesTable, customersTable, subscriptionsTable } from "@workspace/db";
 import {
   ListInvoicesQueryParams,
@@ -16,13 +15,6 @@ import { generatePixCharge, generateTxId } from "../services/qqpag";
 import { sendPaymentReminder } from "../services/uazapi";
 
 const router: IRouter = Router();
-const updateInvoiceParamsSchema = z.object({ id: z.coerce.number().int().positive() });
-const updateInvoiceBodySchema = z.object({
-  amount: z.number().positive().optional(),
-  dueDate: z.coerce.date().optional(),
-  status: z.enum(["pending", "paid", "overdue", "cancelled"]).optional(),
-});
-
 router.get("/invoices", async (req, res): Promise<void> => {
   const query = ListInvoicesQueryParams.safeParse(req.query);
   const conditions = [];
@@ -221,29 +213,36 @@ router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
 
   const txId = generateTxId(invoice.id);
 
-  const pixResult = await generatePixCharge({
-    txId,
-    amount: Number(invoice.amount),
-    description: `Fatura #${invoice.id}`,
-    cpfCnpj: customer.cpfCnpj,
-    customerName: customer.name,
-  });
+  try {
+    const pixResult = await generatePixCharge({
+      txId,
+      amount: Number(invoice.amount),
+      description: `Fatura #${invoice.id}`,
+      cpfCnpj: customer.cpfCnpj,
+      customerName: customer.name,
+    });
 
-  await db
-    .update(invoicesTable)
-    .set({
-      pixCode: pixResult.pixCopiaECola,
-      pixQrCode: pixResult.qrCode,
+    await db
+      .update(invoicesTable)
+      .set({
+        pixCode: pixResult.pixCopiaECola,
+        pixQrCode: pixResult.qrCode,
+        externalId: pixResult.txId,
+      })
+      .where(eq(invoicesTable.id, invoice.id));
+
+    res.json(GeneratePixChargeResponse.parse({
+      invoiceId: invoice.id,
+      qrCode: pixResult.qrCode,
+      pixCopiaECola: pixResult.pixCopiaECola,
       externalId: pixResult.txId,
-    })
-    .where(eq(invoicesTable.id, invoice.id));
-
-  res.json(GeneratePixChargeResponse.parse({
-    invoiceId: invoice.id,
-    qrCode: pixResult.qrCode,
-    pixCopiaECola: pixResult.pixCopiaECola,
-    externalId: pixResult.txId,
-  }));
+    }));
+  } catch (error) {
+    req.log.error({ err: error, invoiceId: invoice.id }, "Failed to generate PIX charge");
+    res.status(502).json({
+      error: error instanceof Error ? error.message : "Falha ao gerar cobrança PIX",
+    });
+  }
 });
 
 router.post("/invoices/:id/send-reminder", async (req, res): Promise<void> => {
