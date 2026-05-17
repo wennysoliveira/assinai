@@ -136,6 +136,17 @@ router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
     return;
   }
 
+  if (invoice.externalId && invoice.pixCode && invoice.pixQrCode) {
+    req.log.info({ invoiceId: invoice.id, externalId: invoice.externalId }, "Returning existing PIX charge");
+    res.json(GeneratePixChargeResponse.parse({
+      invoiceId: invoice.id,
+      qrCode: invoice.pixQrCode,
+      pixCopiaECola: invoice.pixCode,
+      externalId: invoice.externalId,
+    }));
+    return;
+  }
+
   const txId = generateTxId(invoice.id);
 
   const pixResult = await generatePixCharge({
