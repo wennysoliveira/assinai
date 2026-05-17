@@ -1,5 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -14,12 +14,21 @@ import Login from "@/pages/login";
 import Home from "@/pages/home";
 import { useAuth } from "@/hooks/use-auth";
 import { applyStoredThemeColors } from "@/hooks/use-theme-color";
+import { ApiError } from "@workspace/api-client-react";
 
 applyStoredThemeColors();
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+function handle401(error: unknown) {
+  if (error instanceof ApiError && error.status === 401) {
+    queryClient.setQueryData(["auth-me"], null);
+  }
+}
+
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: handle401 }),
+  mutationCache: new MutationCache({ onError: handle401 }),
   defaultOptions: {
     queries: { retry: false, refetchOnWindowFocus: false },
   },

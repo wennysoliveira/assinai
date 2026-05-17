@@ -90,9 +90,8 @@ export default function Invoices() {
         toast({ title: "Cobrança PIX gerada com sucesso" });
       },
       onError: (err: unknown) => {
-        const message =
-          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-          "Erro ao gerar cobrança PIX";
+        const apiErr = err as { status?: number; data?: { error?: string } };
+        const message = apiErr?.data?.error || "Erro ao gerar cobrança PIX";
         toast({ variant: "destructive", title: message });
       },
     },
