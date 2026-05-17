@@ -48,6 +48,9 @@ export default function Invoices() {
     qrCode: string;
     pixCopiaECola: string;
     externalId?: string | null;
+    customerName?: string;
+    dueDate?: string;
+    status?: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -76,6 +79,9 @@ export default function Invoices() {
           qrCode: data.qrCode,
           pixCopiaECola: data.pixCopiaECola,
           externalId: data.externalId,
+          customerName: invoice?.customerName,
+          dueDate: invoice?.dueDate,
+          status: invoice?.status,
         });
         setPixDialogOpen(true);
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
@@ -221,6 +227,9 @@ export default function Invoices() {
                                 qrCode: invoice.pixQrCode || "",
                                 pixCopiaECola: invoice.pixCode || "",
                                 externalId: invoice.externalId || null,
+                                customerName: invoice.customerName,
+                                dueDate: invoice.dueDate,
+                                status: invoice.status,
                               });
                               setPixDialogOpen(true);
                             }}
@@ -255,9 +264,15 @@ export default function Invoices() {
                 <div className="text-2xl font-semibold">{formatCurrency(pixData?.amount ?? 0)}</div>
               </div>
               <div className="rounded-lg border bg-white p-4">
-                {pixData?.qrCode ? (
-                  <img src={pixData.qrCode} alt="QR Code PIX" className="w-full max-w-[240px] mx-auto" />
-                ) : (
+                <img
+                  src={pixData?.qrCode || ""}
+                  alt="QR Code PIX"
+                  className="w-full max-w-[240px] mx-auto"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+                {!pixData?.qrCode && (
                   <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
                     QR Code indisponível
                   </div>
@@ -274,23 +289,34 @@ export default function Invoices() {
                   <div className="text-xs uppercase text-muted-foreground">ID externo</div>
                   <div className="font-mono text-sm break-all">{pixData?.externalId || "-"}</div>
                 </div>
+                <div className="rounded-lg border p-4">
+                  <div className="text-xs uppercase text-muted-foreground">Cliente</div>
+                  <div className="font-medium">{pixData?.customerName || "-"}</div>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <div className="text-xs uppercase text-muted-foreground">Vencimento</div>
+                  <div className="font-medium">{pixData?.dueDate ? formatDate(pixData.dueDate) : "-"}</div>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <div className="text-xs uppercase text-muted-foreground">Status</div>
+                  <div className="font-medium">{pixData?.status || "-"}</div>
+                </div>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">PIX copia e cola</p>
                 <div className="flex gap-2">
                   <code className="flex-1 rounded-md border bg-muted p-3 text-xs break-all font-mono">
-                    {pixData?.pixCopiaECola || "Código PIX indisponível"}
+                    {pixData?.pixCopiaECola || ""}
                   </code>
-                  {pixData?.pixCopiaECola && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleCopyPix(pixData.pixCopiaECola)}
-                      data-testid="button-copy-pix"
-                    >
-                      {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => pixData?.pixCopiaECola && handleCopyPix(pixData.pixCopiaECola)}
+                    disabled={!pixData?.pixCopiaECola}
+                    data-testid="button-copy-pix"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </Button>
                 </div>
               </div>
             </div>
