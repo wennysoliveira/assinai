@@ -52,7 +52,6 @@ export default function Invoices() {
     dueDate?: string;
     status?: string;
   } | null>(null);
-  const [showQrFallback, setShowQrFallback] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -84,7 +83,6 @@ export default function Invoices() {
           dueDate: invoice?.dueDate,
           status: invoice?.status,
         });
-        setShowQrFallback(false);
         setPixDialogOpen(true);
         queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
         toast({ title: "Cobrança PIX gerada com sucesso" });
@@ -233,7 +231,6 @@ export default function Invoices() {
                                 dueDate: invoice.dueDate,
                                 status: invoice.status,
                               });
-                              setShowQrFallback(false);
                               setPixDialogOpen(true);
                             }}
                             title="Ver PIX"
@@ -267,12 +264,11 @@ export default function Invoices() {
                 <div className="text-2xl font-semibold">{formatCurrency(pixData?.amount ?? 0)}</div>
               </div>
               <div className="rounded-lg border bg-white p-4">
-                {pixData?.qrCode && !showQrFallback ? (
+                {pixData?.qrCode ? (
                   <img
                     src={pixData.qrCode}
                     alt="QR Code PIX"
                     className="w-full max-w-[240px] mx-auto"
-                    onError={() => setShowQrFallback(true)}
                   />
                 ) : (
                   <div className="flex h-[240px] flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">

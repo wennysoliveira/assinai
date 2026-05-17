@@ -139,8 +139,17 @@ export async function generatePixCharge(data: PixChargeRequest): Promise<PixChar
 
   if (qrcodeRes.ok) {
     const qrData = await qrcodeRes.json() as Record<string, unknown>;
-    qrCode = String(qrData.imagemQrcode ?? qrData.qrcode ?? qrData.image ?? "");
-    pixCopiaECola = String(qrData.pixCopiaECola ?? qrData.payload ?? qrData.emv ?? qrData.qrcode ?? "");
+    const imagemQrcode = qrData.imagemQrcode ?? qrData.qrcode ?? qrData.image ?? qrData.qrCode;
+    const copiaECola = qrData.pixCopiaECola ?? qrData.payload ?? qrData.emv ?? qrData.copyPaste ?? qrData.qrcode;
+    if (typeof imagemQrcode === "string") {
+      qrCode = imagemQrcode.startsWith("data:") ? imagemQrcode : imagemQrcode;
+    } else if (typeof qrData.imagemQrcode === "object" && qrData.imagemQrcode && "base64" in (qrData.imagemQrcode as Record<string, unknown>)) {
+      const base64 = String((qrData.imagemQrcode as Record<string, unknown>).base64 ?? "");
+      qrCode = base64 ? `data:image/png;base64,${base64}` : "";
+    }
+    if (typeof copiaECola === "string") {
+      pixCopiaECola = copiaECola;
+    }
     logger.info({ txId: data.txId }, "QRCode obtained from QQPag");
   } else {
     const errText = await qrcodeRes.text();
