@@ -99,6 +99,71 @@ router.get("/invoices/:id", async (req, res): Promise<void> => {
   }));
 });
 
+router.patch("/invoices/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid invoice id" });
+    return;
+  }
+
+  const body = req.body as { amount?: unknown; dueDate?: unknown; status?: unknown };
+  const updates: { amount?: number; dueDate?: Date; status?: "pending" | "paid" | "overdue" | "cancelled" } = {};
+
+  if (body.amount !== undefined) {
+    const amount = Number(body.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      res.status(400).json({ error: "Invalid amount" });
+      return;
+    }
+    updates.amount = amount;
+  }
+
+  if (body.dueDate !== undefined) {
+    const dueDate = new Date(String(body.dueDate));
+    if (Number.isNaN(dueDate.getTime())) {
+      res.status(400).json({ error: "Invalid dueDate" });
+      return;
+    }
+    updates.dueDate = dueDate;
+  }
+
+  if (body.status !== undefined) {
+    const validStatus = ["pending", "paid", "overdue", "cancelled"] as const;
+    if (!validStatus.includes(body.status as (typeof validStatus)[number])) {
+      res.status(400).json({ error: "Invalid status" });
+      return;
+    }
+    updates.status = body.status as (typeof validStatus)[number];
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "No fields to update" });
+    return;
+  }
+
+  const [invoice] = await db
+    .update(invoicesTable)
+    .set(updates)
+    .where(eq(invoicesTable.id, id))
+    .returning();
+
+  if (!invoice) {
+    res.status(404).json({ error: "Invoice not found" });
+    return;
+  }
+
+  const [customer] = await db
+    .select({ name: customersTable.name })
+    .from(customersTable)
+    .where(eq(customersTable.id, invoice.customerId));
+
+  res.json(GetInvoiceResponse.parse({
+    ...invoice,
+    amount: Number(invoice.amount),
+    customerName: customer?.name || "Unknown",
+  }));
+});
+
 router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
   const params = GeneratePixChargeParams.safeParse(req.params);
   if (!params.success) {
