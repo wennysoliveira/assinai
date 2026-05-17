@@ -135,7 +135,7 @@ export default function Login() {
         <div className="flex items-center justify-between px-8 py-5 border-b border-border">
           <Link href="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            Voltar ao início
+            Ir para o site
           </Link>
           {/* Mobile logo */}
           <div className="flex items-center gap-2 lg:hidden">
