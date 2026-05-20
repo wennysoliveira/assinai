@@ -53,20 +53,20 @@ export default function Login() {
       {/* Left panel — decorative */}
       <div
         className="hidden lg:flex lg:w-[55%] flex-col relative overflow-hidden"
-        style={{ background: "linear-gradient(145deg, #1e1b4b 0%, #312e81 40%, #1d4ed8 100%)" }}
+        style={{ background: "linear-gradient(145deg, #0f3d3e 0%, #0f766e 42%, #14b8a6 100%)" }}
       >
         {/* Decorative circles */}
         <div
           className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #818cf8, transparent)" }}
+          style={{ background: "radial-gradient(circle, #5eead4, transparent)" }}
         />
         <div
           className="absolute top-1/2 -right-32 w-80 h-80 rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, #60a5fa, transparent)" }}
+          style={{ background: "radial-gradient(circle, #99f6e4, transparent)" }}
         />
         <div
           className="absolute -bottom-20 left-1/3 w-72 h-72 rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
+          style={{ background: "radial-gradient(circle, #2dd4bf, transparent)" }}
         />
 
         {/* Grid pattern overlay */}
@@ -86,18 +86,18 @@ export default function Login() {
             <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/20 shadow">
               <CreditCard className="w-5 h-5 text-white" />
             </div>
-            <span className="text-white font-bold text-xl tracking-tight">assin<span className="text-indigo-300">AI</span></span>
+            <span className="text-white font-bold text-xl tracking-tight">assin<span className="text-teal-200">AI</span></span>
           </div>
 
           {/* Center content */}
           <div className="flex-1 flex flex-col justify-center">
-            <p className="text-indigo-300 text-sm font-medium uppercase tracking-widest mb-4">
+            <p className="text-teal-200 text-sm font-medium uppercase tracking-widest mb-4">
               Gestão de Assinaturas
             </p>
             <h2 className="text-white text-4xl font-extrabold leading-tight mb-6">
               Automatize suas<br />cobranças recorrentes
             </h2>
-            <p className="text-indigo-200/80 text-lg leading-relaxed mb-10 max-w-md">
+            <p className="text-teal-50/80 text-lg leading-relaxed mb-10 max-w-md">
               Gerencie clientes, gere cobranças PIX e envie lembretes via WhatsApp — tudo em um só lugar.
             </p>
 
@@ -105,9 +105,9 @@ export default function Login() {
               {highlights.map((h) => (
                 <div key={h.text} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
-                    <h.icon className="w-4 h-4 text-indigo-300" />
+                    <h.icon className="w-4 h-4 text-teal-200" />
                   </div>
-                  <span className="text-indigo-100 text-sm">{h.text}</span>
+                  <span className="text-teal-50 text-sm">{h.text}</span>
                 </div>
               ))}
             </div>
@@ -122,7 +122,7 @@ export default function Login() {
             ].map((s) => (
               <div key={s.label}>
                 <div className="text-white font-bold text-xl">{s.value}</div>
-                <div className="text-indigo-300 text-xs">{s.label}</div>
+                <div className="text-teal-200 text-xs">{s.label}</div>
               </div>
             ))}
           </div>
