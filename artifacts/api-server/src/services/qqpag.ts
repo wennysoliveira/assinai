@@ -2,7 +2,6 @@ import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
 
 const BASE_URL = sanitizeBaseUrl(process.env.QQPAG_BASE_URL || "https://sandbox.qqpag.com.br");
-const STATIC_TOKEN = process.env.QQPAG_TOKEN || "";
 const CLIENT_ID = process.env.QQPAG_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.QQPAG_CLIENT_SECRET || "";
 const CHAVE_PIX = process.env.QQPAG_CHAVE_PIX || "";
@@ -33,6 +32,42 @@ function getErrorMessage(error: unknown): string {
 function causeToString(cause: Error): string {
   const anyCause = cause as Error & { code?: string };
   return anyCause.code ? `${cause.message} (${anyCause.code})` : cause.message;
+}
+
+function truncate(text: string, maxLength = 500): string {
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+}
+
+async function readQQPagError(response: Response): Promise<string> {
+  const body = await response.text();
+  const trimmed = body.trim();
+
+  if (!trimmed) {
+    return `HTTP ${response.status}`;
+  }
+
+  if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
+    return `HTTP ${response.status}: resposta HTML inesperada da QQPag. Verifique se QQPAG_BASE_URL está correto; pela documentação, homologação usa https://sandbox.qqpag.com.br.`;
+  }
+
+  try {
+    const data = JSON.parse(trimmed) as Record<string, unknown>;
+    const message =
+      data.message ??
+      data.error ??
+      data.detail ??
+      data.title ??
+      data.descricao ??
+      data.mensagem;
+
+    if (typeof message === "string" && message.trim()) {
+      return `HTTP ${response.status}: ${message.trim()}`;
+    }
+  } catch {
+    // Fall through to a bounded text response.
+  }
+
+  return `HTTP ${response.status}: ${truncate(trimmed)}`;
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
@@ -84,10 +119,6 @@ interface TokenCache {
 let tokenCache: TokenCache | null = null;
 
 async function getAccessToken(retryCount = 1): Promise<string> {
-  if (STATIC_TOKEN) {
-    return STATIC_TOKEN;
-  }
-
   if (tokenCache && Date.now() < tokenCache.expiresAt - 30_000) {
     return tokenCache.token;
   }
@@ -117,9 +148,9 @@ async function getAccessToken(retryCount = 1): Promise<string> {
   }
 
   if (!response.ok) {
-    const body = await response.text();
-    logger.error({ status: response.status, body }, "QQPag OAuth2 token request failed");
-    throw new Error(`QQPag auth failed: ${response.status}`);
+    const message = await readQQPagError(response);
+    logger.error({ status: response.status, message }, "QQPag OAuth2 token request failed");
+    throw new Error(`Falha ao autenticar na QQPag: ${message}`);
   }
 
   const data = await response.json() as { access_token: string; expires_in?: number };
@@ -260,7 +291,7 @@ export async function fetchPixChargeArtifacts(
   }
 
   const errText = await qrcodeRes.text();
-  logger.warn({ status: qrcodeRes.status, body: errText, txId }, "QQPag QRCode fetch failed");
+  logger.warn({ status: qrcodeRes.status, body: truncate(errText), txId }, "QQPag QRCode fetch failed");
 
   const fallbackChargeData = chargeData ?? await consultarCobranca(txId);
   return parsePixArtifacts(txId, {}, fallbackChargeData);
@@ -271,8 +302,8 @@ export async function generatePixCharge(data: PixChargeRequest): Promise<PixChar
     throw new Error("QQPag não configurado: defina QQPAG_CHAVE_PIX");
   }
 
-  if (!STATIC_TOKEN && (!CLIENT_ID || !CLIENT_SECRET)) {
-    throw new Error("QQPag não configurado: defina QQPAG_TOKEN ou QQPAG_CLIENT_ID e QQPAG_CLIENT_SECRET");
+  if (!CLIENT_ID || !CLIENT_SECRET) {
+    throw new Error("QQPag não configurado: defina QQPAG_CLIENT_ID e QQPAG_CLIENT_SECRET");
   }
 
   logger.info({ txId: data.txId }, "Creating QQPag PIX charge");
@@ -306,9 +337,9 @@ export async function generatePixCharge(data: PixChargeRequest): Promise<PixChar
   const createRes = await apiRequest("PUT", `/api/v1/cob/${data.txId}`, chargeBody);
 
   if (!createRes.ok) {
-    const errorText = await createRes.text();
-    logger.error({ status: createRes.status, body: errorText, txId: data.txId }, "QQPag create charge error");
-    throw new Error(`QQPag criar cobrança retornou ${createRes.status}: ${errorText}`);
+    const message = await readQQPagError(createRes);
+    logger.error({ status: createRes.status, message, txId: data.txId }, "QQPag create charge error");
+    throw new Error(`Falha ao criar cobrança na QQPag: ${message}`);
   }
 
   const chargeData = await createRes.json() as Record<string, unknown>;
@@ -322,8 +353,8 @@ export async function generatePixCharge(data: PixChargeRequest): Promise<PixChar
 export async function consultarCobranca(txId: string): Promise<Record<string, unknown>> {
   const res = await apiRequest("GET", `/api/v2/cob/${txId}`);
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`QQPag consultar cobrança ${txId} retornou ${res.status}: ${errorText}`);
+    const message = await readQQPagError(res);
+    throw new Error(`Falha ao consultar cobrança ${txId} na QQPag: ${message}`);
   }
   return res.json() as Promise<Record<string, unknown>>;
 }
