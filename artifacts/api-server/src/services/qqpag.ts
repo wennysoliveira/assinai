@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
 
 const BASE_URL = sanitizeBaseUrl(process.env.QQPAG_BASE_URL || "https://sandbox.qqpag.com.br");
+const STATIC_TOKEN = process.env.QQPAG_TOKEN || "";
 const CLIENT_ID = process.env.QQPAG_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.QQPAG_CLIENT_SECRET || "";
 const CHAVE_PIX = process.env.QQPAG_CHAVE_PIX || "";
@@ -83,6 +84,10 @@ interface TokenCache {
 let tokenCache: TokenCache | null = null;
 
 async function getAccessToken(retryCount = 1): Promise<string> {
+  if (STATIC_TOKEN) {
+    return STATIC_TOKEN;
+  }
+
   if (tokenCache && Date.now() < tokenCache.expiresAt - 30_000) {
     return tokenCache.token;
   }
@@ -262,24 +267,37 @@ export async function fetchPixChargeArtifacts(
 }
 
 export async function generatePixCharge(data: PixChargeRequest): Promise<PixChargeResult> {
-  if (!CLIENT_ID || !CLIENT_SECRET || !CHAVE_PIX) {
-    throw new Error("QQPag não configurado: defina QQPAG_CLIENT_ID, QQPAG_CLIENT_SECRET e QQPAG_CHAVE_PIX");
+  if (!CHAVE_PIX) {
+    throw new Error("QQPag não configurado: defina QQPAG_CHAVE_PIX");
+  }
+
+  if (!STATIC_TOKEN && (!CLIENT_ID || !CLIENT_SECRET)) {
+    throw new Error("QQPag não configurado: defina QQPAG_TOKEN ou QQPAG_CLIENT_ID e QQPAG_CLIENT_SECRET");
   }
 
   logger.info({ txId: data.txId }, "Creating QQPag PIX charge");
 
   const cpfCnpj = data.cpfCnpj.replace(/\D/g, "");
+  if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
+    throw new Error("CPF/CNPJ do cliente inválido para gerar cobrança PIX");
+  }
+
+  const customerName = data.customerName.trim();
+  if (!customerName) {
+    throw new Error("Nome do cliente é obrigatório para gerar cobrança PIX");
+  }
+
   const isCnpj = cpfCnpj.length > 11;
 
   const chargeBody = {
-    calendario: { expiracao: data.expiracaoSegundos ?? 86_400 },
+    calendario: { expiracao: data.expiracaoSegundos ?? 8_640_000 },
     devedor: {
       [isCnpj ? "cnpj" : "cpf"]: cpfCnpj,
-      nome: data.customerName,
+      nome: customerName,
     },
     valor: {
       original: data.amount.toFixed(2),
-      modalidadeAlteracao: 0,
+      modalidadeAlteracao: 1,
     },
     chave: CHAVE_PIX,
     ...(data.description ? { solicitacaoPagador: data.description } : {}),

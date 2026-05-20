@@ -21,7 +21,9 @@ services:
 
       # QQPag (PIX)
       QQPAG_BASE_URL: https://api.qqpag.com
-      QQPAG_TOKEN: seu-token-qqpag
+      QQPAG_CLIENT_ID: seu-client-id-qqpag
+      QQPAG_CLIENT_SECRET: seu-client-secret-qqpag
+      QQPAG_CHAVE_PIX: sua-chave-pix-qqpag
 
       # Uazapi (WhatsApp)
       UAZAPI_BASE_URL: https://api.uazapi.com

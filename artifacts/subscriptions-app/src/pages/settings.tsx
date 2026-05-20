@@ -238,9 +238,19 @@ export default function Settings() {
               <p className="text-xs text-muted-foreground">Variável: QQPAG_BASE_URL</p>
             </div>
             <div className="space-y-2">
-              <Label>Token de Autenticação</Label>
+              <Label>Client ID</Label>
+              <Input value="Configurado via variável de ambiente" disabled />
+              <p className="text-xs text-muted-foreground">Variável: QQPAG_CLIENT_ID</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Client Secret</Label>
               <Input value="••••••••••••••••" disabled className="font-mono tracking-widest" />
-              <p className="text-xs text-muted-foreground">Variável: QQPAG_TOKEN</p>
+              <p className="text-xs text-muted-foreground">Variável: QQPAG_CLIENT_SECRET</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Chave PIX</Label>
+              <Input value="Configurado via variável de ambiente" disabled />
+              <p className="text-xs text-muted-foreground">Variável: QQPAG_CHAVE_PIX</p>
             </div>
           </CardContent>
         </Card>

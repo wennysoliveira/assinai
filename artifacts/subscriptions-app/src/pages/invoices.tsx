@@ -4,6 +4,7 @@ import {
   useGeneratePixCharge,
   useSendPaymentReminder,
   getListInvoicesQueryKey,
+  ApiError,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -101,8 +102,12 @@ export default function Invoices() {
         toast({ title: "Cobrança PIX gerada com sucesso" });
       },
       onError: (err: unknown) => {
-        const apiErr = err as { status?: number; data?: { error?: string } };
-        const message = apiErr?.data?.error || "Erro ao gerar cobrança PIX";
+        const message =
+          err instanceof ApiError
+            ? ((err.data as { error?: string } | null)?.error || err.message)
+            : err instanceof Error
+              ? err.message
+              : "Erro ao gerar cobrança PIX";
         toast({ variant: "destructive", title: message });
       },
     },
