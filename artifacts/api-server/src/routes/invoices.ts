@@ -11,7 +11,7 @@ import {
   SendPaymentReminderParams,
   SendPaymentReminderResponse,
 } from "@workspace/api-zod";
-import { generatePixCharge, generateTxId } from "../services/qqpag";
+import { fetchPixChargeArtifacts, generatePixCharge, generateTxId } from "../services/qqpag";
 import { sendPaymentReminder } from "../services/uazapi";
 
 const router: IRouter = Router();
@@ -106,7 +106,7 @@ router.patch("/invoices/:id", async (req, res): Promise<void> => {
   }
 
   const body = req.body as { amount?: unknown; dueDate?: unknown; status?: unknown };
-  const updates: { amount?: number; dueDate?: Date; status?: "pending" | "paid" | "overdue" | "cancelled" } = {};
+  const updates: { amount?: string; dueDate?: Date; status?: "pending" | "paid" | "overdue" | "cancelled" } = {};
 
   if (body.amount !== undefined) {
     const amount = Number(body.amount);
@@ -114,7 +114,7 @@ router.patch("/invoices/:id", async (req, res): Promise<void> => {
       res.status(400).json({ error: "Invalid amount" });
       return;
     }
-    updates.amount = amount;
+    updates.amount = amount.toFixed(2);
   }
 
   if (body.dueDate !== undefined) {
@@ -200,15 +200,46 @@ router.post("/invoices/:id/generate-pix", async (req, res): Promise<void> => {
     return;
   }
 
-  if (invoice.externalId && invoice.pixCode && invoice.pixQrCode) {
-    req.log.info({ invoiceId: invoice.id, externalId: invoice.externalId }, "Returning existing PIX charge");
-    res.json(GeneratePixChargeResponse.parse({
-      invoiceId: invoice.id,
-      qrCode: invoice.pixQrCode,
-      pixCopiaECola: invoice.pixCode,
-      externalId: invoice.externalId,
-    }));
-    return;
+  if (invoice.externalId) {
+    req.log.info({ invoiceId: invoice.id, externalId: invoice.externalId }, "Reusing existing PIX charge");
+
+    try {
+      const existingPix = await fetchPixChargeArtifacts(invoice.externalId);
+      const qrCode = existingPix.qrCode || invoice.pixQrCode || "";
+      const pixCopiaECola = existingPix.pixCopiaECola || invoice.pixCode || "";
+
+      if (qrCode !== (invoice.pixQrCode || "") || pixCopiaECola !== (invoice.pixCode || "")) {
+        await db
+          .update(invoicesTable)
+          .set({
+            pixCode: pixCopiaECola,
+            pixQrCode: qrCode,
+          })
+          .where(eq(invoicesTable.id, invoice.id));
+      }
+
+      if (qrCode || pixCopiaECola) {
+        res.json(GeneratePixChargeResponse.parse({
+          invoiceId: invoice.id,
+          qrCode,
+          pixCopiaECola,
+          externalId: invoice.externalId,
+        }));
+        return;
+      }
+    } catch (error) {
+      req.log.warn({ err: error, invoiceId: invoice.id, externalId: invoice.externalId }, "Failed to refresh existing PIX charge");
+    }
+
+    if (invoice.pixCode || invoice.pixQrCode) {
+      res.json(GeneratePixChargeResponse.parse({
+        invoiceId: invoice.id,
+        qrCode: invoice.pixQrCode || "",
+        pixCopiaECola: invoice.pixCode || "",
+        externalId: invoice.externalId,
+      }));
+      return;
+    }
   }
 
   const txId = generateTxId(invoice.id);

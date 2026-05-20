@@ -188,6 +188,79 @@ export interface PixChargeResult {
   pixCopiaECola: string;
 }
 
+function parsePixArtifacts(
+  txId: string,
+  qrData: Record<string, unknown>,
+  chargeData?: Record<string, unknown>,
+): { qrCode: string; pixCopiaECola: string } {
+  logger.info({ txId, qrDataKeys: Object.keys(qrData) }, "QQPag QRCode raw response keys");
+
+  let qrCode = "";
+  let pixCopiaECola = "";
+
+  const rawQr =
+    qrData.qrInBase64 ??
+    qrData.imagemQrcode ??
+    qrData.qrcode ??
+    qrData.image ??
+    qrData.qrCode;
+
+  const rawCopiaECola =
+    qrData.pixCopiaCola ??
+    qrData.pixCopiaECola ??
+    qrData.payload ??
+    qrData.emv ??
+    qrData.copyPaste;
+
+  if (typeof rawQr === "string" && rawQr.length > 0) {
+    if (rawQr.startsWith("data:") || rawQr.startsWith("http")) {
+      qrCode = rawQr;
+    } else {
+      qrCode = `data:image/png;base64,${rawQr}`;
+    }
+  } else if (typeof rawQr === "object" && rawQr !== null) {
+    const obj = rawQr as Record<string, unknown>;
+    const b64 = String(obj.base64 ?? obj.content ?? "");
+    if (b64) qrCode = `data:image/png;base64,${b64}`;
+  }
+
+  if (typeof rawCopiaECola === "string" && rawCopiaECola.length > 0) {
+    pixCopiaECola = rawCopiaECola;
+  }
+
+  if (!pixCopiaECola && chargeData) {
+    const loc = chargeData.loc as Record<string, unknown> | undefined;
+    pixCopiaECola = String(
+      chargeData.pixCopiaECola ?? chargeData.pixCopiaCola ?? loc?.location ?? ""
+    );
+  }
+
+  logger.info(
+    { txId, hasQrCode: qrCode.length > 0, hasCopiaECola: pixCopiaECola.length > 0 },
+    "QRCode obtained from QQPag",
+  );
+
+  return { qrCode, pixCopiaECola };
+}
+
+export async function fetchPixChargeArtifacts(
+  txId: string,
+  chargeData?: Record<string, unknown>,
+): Promise<{ qrCode: string; pixCopiaECola: string }> {
+  const qrcodeRes = await apiRequest("GET", `/api/v2/cob/${txId}/qrcode`);
+
+  if (qrcodeRes.ok) {
+    const qrData = await qrcodeRes.json() as Record<string, unknown>;
+    return parsePixArtifacts(txId, qrData, chargeData);
+  }
+
+  const errText = await qrcodeRes.text();
+  logger.warn({ status: qrcodeRes.status, body: errText, txId }, "QQPag QRCode fetch failed");
+
+  const fallbackChargeData = chargeData ?? await consultarCobranca(txId);
+  return parsePixArtifacts(txId, {}, fallbackChargeData);
+}
+
 export async function generatePixCharge(data: PixChargeRequest): Promise<PixChargeResult> {
   if (!CLIENT_ID || !CLIENT_SECRET || !CHAVE_PIX) {
     throw new Error("QQPag não configurado: defina QQPAG_CLIENT_ID, QQPAG_CLIENT_SECRET e QQPAG_CHAVE_PIX");
@@ -223,55 +296,7 @@ export async function generatePixCharge(data: PixChargeRequest): Promise<PixChar
   const chargeData = await createRes.json() as Record<string, unknown>;
   logger.info({ txId: data.txId, status: chargeData.status }, "QQPag charge created");
 
-  const qrcodeRes = await apiRequest("GET", `/api/v2/cob/${data.txId}/qrcode`);
-
-  let qrCode = "";
-  let pixCopiaECola = "";
-
-  if (qrcodeRes.ok) {
-    const qrData = await qrcodeRes.json() as Record<string, unknown>;
-    logger.info({ txId: data.txId, qrDataKeys: Object.keys(qrData) }, "QQPag QRCode raw response keys");
-
-    const rawQr =
-      qrData.qrInBase64 ??
-      qrData.imagemQrcode ??
-      qrData.qrcode ??
-      qrData.image ??
-      qrData.qrCode;
-
-    const rawCopiaECola =
-      qrData.pixCopiaCola ??
-      qrData.pixCopiaECola ??
-      qrData.payload ??
-      qrData.emv ??
-      qrData.copyPaste;
-
-    if (typeof rawQr === "string" && rawQr.length > 0) {
-      if (rawQr.startsWith("data:") || rawQr.startsWith("http")) {
-        qrCode = rawQr;
-      } else {
-        qrCode = `data:image/png;base64,${rawQr}`;
-      }
-    } else if (typeof rawQr === "object" && rawQr !== null) {
-      const obj = rawQr as Record<string, unknown>;
-      const b64 = String(obj.base64 ?? obj.content ?? "");
-      if (b64) qrCode = `data:image/png;base64,${b64}`;
-    }
-
-    if (typeof rawCopiaECola === "string" && rawCopiaECola.length > 0) {
-      pixCopiaECola = rawCopiaECola;
-    }
-
-    logger.info({ txId: data.txId, hasQrCode: qrCode.length > 0, hasCopiaECola: pixCopiaECola.length > 0 }, "QRCode obtained from QQPag");
-  } else {
-    const errText = await qrcodeRes.text();
-    logger.warn({ status: qrcodeRes.status, body: errText, txId: data.txId }, "QQPag QRCode fetch failed");
-
-    const loc = chargeData.loc as Record<string, unknown> | undefined;
-    pixCopiaECola = String(
-      chargeData.pixCopiaECola ?? chargeData.pixCopiaCola ?? loc?.location ?? ""
-    );
-  }
+  const { qrCode, pixCopiaECola } = await fetchPixChargeArtifacts(data.txId, chargeData);
 
   return { txId: data.txId, qrCode, pixCopiaECola };
 }

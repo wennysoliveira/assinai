@@ -37,6 +37,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QrCode, MessageSquare, Receipt, Copy, Check, Pencil } from "lucide-react";
+import type { Invoice } from "@workspace/api-client-react";
 
 export default function Invoices() {
   const apiBase = `${import.meta.env.BASE_URL}api`;
@@ -119,6 +120,30 @@ export default function Invoices() {
       onError: () => toast({ variant: "destructive", title: "Erro ao enviar lembrete" }),
     },
   });
+
+  const openPixDialogFromInvoice = (invoice: Invoice) => {
+    setCopied(false);
+    setPixData({
+      invoiceId: invoice.id,
+      amount: invoice.amount,
+      qrCode: invoice.pixQrCode || "",
+      pixCopiaECola: invoice.pixCode || "",
+      externalId: invoice.externalId || null,
+      customerName: invoice.customerName,
+      dueDate: invoice.dueDate,
+      status: invoice.status,
+    });
+    setPixDialogOpen(true);
+  };
+
+  const handlePixClick = (invoice: Invoice) => {
+    if (invoice.pixCode || invoice.pixQrCode) {
+      openPixDialogFromInvoice(invoice);
+      return;
+    }
+
+    generatePix.mutate({ id: invoice.id });
+  };
 
   const handleCopyPix = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -271,9 +296,9 @@ export default function Invoices() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => generatePix.mutate({ id: invoice.id })}
+                                onClick={() => handlePixClick(invoice)}
                                 disabled={generatePix.isPending}
-                                title="Gerar PIX"
+                                title={invoice.externalId || invoice.pixCode || invoice.pixQrCode ? "Ver PIX" : "Gerar PIX"}
                                 data-testid={`button-generate-pix-${invoice.id}`}
                               >
                                 <QrCode className="w-4 h-4" />
@@ -294,21 +319,7 @@ export default function Invoices() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => {
-                                const qrCode = invoice.pixQrCode || "";
-                                const pixCopiaECola = invoice.pixCode || "";
-                                setPixData({
-                                  invoiceId: invoice.id,
-                                  amount: invoice.amount,
-                                  qrCode,
-                                  pixCopiaECola,
-                                  externalId: invoice.externalId || null,
-                                  customerName: invoice.customerName,
-                                  dueDate: invoice.dueDate,
-                                  status: invoice.status,
-                                });
-                                setPixDialogOpen(true);
-                              }}
+                              onClick={() => openPixDialogFromInvoice(invoice)}
                               title="Ver PIX"
                               data-testid={`button-view-pix-${invoice.id}`}
                             >
